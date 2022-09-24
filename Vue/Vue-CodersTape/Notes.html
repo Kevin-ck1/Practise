@@ -1,0 +1,70 @@
+<html>
+
+v-bind:- 
+		Binds data to html tags, used to pass on data into the html markup
+		e.g
+		<h1 v-bind:title="message"></h1> ===Title gives a contectual menu
+		
+v-model=""
+		 its a two way binding
+
+EVENTS
+To initialize an event we use:
+		@click, @keyup.enter
+To push items into an array,
+		items.push(item)
+		items, is the name of the array, and item is the object to push
+		the item is a data element bond with v-model
+
+While calculating, to prevent concatenation eg during addition,(numbers are put togeteher as strings)
+we need to parseInt()
+	e.g parseInt(price) + parseInt(tax)
+
+
+METHODS---Check episode 5
+
+ Methods accepts parameters 
+	moneyFormated(x){
+		return "KSH" + this.x
+	}
+	The (x) is the parameter, and when calling the function in the html markup, we replace it
+	with the relavant parameter, as shown below
+	 
+	<div>Tax: {{moneyFormat(tax)}}</div>
+	<div>Toatal: {{ moneyFormat(total) }} </div> 
+
+JSON, NPM
+	To creat a .json file, run ===  npm init -y
+
+	npm install laravel-mix --save-dev
+
+To continuous compile our app.js we run === npm run watch
+
+</html>
+Write notes on
+1.Laravel Mix---Creating a js complier
+2.Pulling data from a json file--using axios
+3.Vue Cli and Vue Ui---Settup
+4.Simple routing of elements,
+5.Vue Router
+6.CComponents-Prop
+
+Projects
+1.Todo lists
+2.AutoComplete
+3.Tree 
+4.Calculator 
+5.Dropdown menu 
+6.Pricing Component 
+
+Search for
+1.Events and Listners 
+2. watch 
+3. Mounted
+4. Class Binding
+5.replace
+6.CAll back function 
+7.Regular Expressions
+
+
+

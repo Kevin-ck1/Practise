@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> 
+        <style>
+            .redWarning {
+                background-color: red;
+            }
+
+            .yellowWarning {
+                text-decoration: underline;
+            }
+            .red-over {
+                background-color: red;   
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div id="app">
+
+            <!-- <p :class="{redWarning: error, yellowWarning:warning }">{{value}}</p> -->
+
+            <p :class="classObject">{{value}}</p>
+
+            <div :style="{fontSize: (value*10) + 'px'}">{{value}}</div> <!--To input inline binding-->
+           
+            <button @click="value ++">+</button>
+            <button @click="value --">-</button>
+            <button @click="error =! error">Select</button>
+            <button @click="warning =! warning">Warn</button>
+        </div>
+
+        <script>
+           new Vue ({
+               el: "#app",
+
+               data: {
+                   value: "1",
+                   error: false,
+                   warning: false,
+               },
+
+               computed:  {
+                   classObject(){
+                       return {
+                           'redWarning': this.error,
+                          'yellowWarning': this.warning,
+                           'red-over': this.value > 5,
+                       }
+                   }
+               },
+           });
+        </script>
+
+    </body>
+</html>

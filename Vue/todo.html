@@ -1,0 +1,51 @@
+<html>
+<head>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+
+	<div id="app">
+		<h1>ToDOs App</h1>
+		<br>
+		<input type="text" placeholder="Add todo" v-on:keyup.enter="addTodo">
+		
+		<ul>
+			<li v-for="todo in todos">
+				<input type="checkbox" v-model="todo.done">
+				<del v-if="todo.done">{{todo.text}} </del>
+				<span v-else>{{todo.text}} </span>
+				<span>&nbsp</span>
+				<button v-on:click="removeTodo(todo.id)" >Remove</button>
+			</li>
+		</ul>
+		
+	</div>
+	
+	<script>
+	
+		new Vue({
+			el: "#app",
+			
+			data: {
+				todos:[
+					{text: 'todo1', done:false, id:Date.now()},
+					{text: 'todo2', done:false, id:Date.now()+1},					
+				]
+			},
+		
+			methods: {
+				addTodo({target}) {
+					this.todos.push({text: target.value, done: false, id: Date.now()});
+					target.value='';
+				},
+				
+				removeTodo(id){
+					this.todos = this.todos.filter(todo => todo.id !== id) 
+				},
+				
+			},
+		})
+	</script>
+</body>
+</html>

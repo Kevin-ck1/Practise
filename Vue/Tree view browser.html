@@ -1,0 +1,49 @@
+<html>
+<head>
+<style>
+
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+</head>
+
+
+<body>
+
+	<div id="app">
+
+		<h1>Hello</h1>
+
+		<form>
+			<input type="text" v-model="tempdata">
+			<button>Add</button>
+		</form>
+
+	{{tempdata}}
+	</div>
+
+
+
+
+
+<script>
+new Vue ({
+
+	el: "#app",
+	
+	data:{
+		tempdata: "",
+		todos: [
+		
+		],
+	},
+
+
+})
+
+</script>
+</body>
+
+</html>

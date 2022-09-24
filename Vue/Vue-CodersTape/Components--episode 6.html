@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    </head>
+
+    <body>
+        <div id="app">
+            <accordian v-for="item in items" :key="item.id" :item="item"></accordian>    <!--This calls the accordian componet-->
+            <!--(:item) is the prop for the,which can be given any name, it allow us to acces the data from
+            the vwe instance into our componet-->
+
+            <!--NOTE, While itterating using v-for, it better to have the array objects have an id
+            hence to our items we should introduce item.id
+            the id should be bound to the component as (:key="item.id")-->
+        </div>
+
+        <script>
+
+            Vue.component('accordian', { 
+                //To pass data from the vue instance to the component, we introduce a prop
+                //The prop is hence used to accept values passed into our component
+                props:['item'],
+
+                //the template contains the html markup to be called when the accordian is called  
+                template: //Note all component templates, should have a single root element, i.e the div tag
+                `             
+                    <div>
+                        <p>{{item.title}}</p> 
+                        <span @click="toggle =! toggle">Details</span>
+                        <p v-if="toggle">{{item.description}}</p>
+                        <br>
+                    </div> 
+                `,
+                data(){
+                    return {
+                        toggle: false,
+                    };
+                },
+            });
+            
+
+           new Vue ({
+                el: "#app",
+
+                data: {
+                    items:[
+                        {id:"1", title:'Tiltle 1', description:'Description for tab 1' },
+                        {id:"2", title:'Tiltle 2', description:'Description for tab 2' },
+                        {id:"3", title:'Tiltle 3', description:'Description for tab 3' },
+                    ]
+                },
+
+           });
+        </script>
+    </body>
+
+</html>

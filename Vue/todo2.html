@@ -1,0 +1,117 @@
+<html>
+<head>
+<style type="text/css">
+	.bullets {
+		list-style-type: none;
+	}
+	.taskItem {
+		text-decoration: line-through;
+	}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+
+<body>
+
+<div id="app">
+
+	<h1>
+		Tasks
+		
+	    <transition name="fade">
+			<small v-if="incomplete">({{ incomplete }})</small>
+        </transition>
+	</h1>
+	<br>
+	<div>
+		<input type="text" placeholders="Add Tasks" v-on:keyup.enter="addTasks" v-model="newTasks">
+		<span><button @click="addTasks">+ADD</button></span>
+	</div>
+	<br>
+	
+	<div>
+		<button @click="clearCompleted"> Clear Completed </button>
+		<button @click="removeAll">Clear All </button>
+	</div>
+	
+	<ul class="bullets">
+		<li v-for="task in tasks">
+			<input type="checkbox" v-model="task.completed">  <!--The check box toggles with the help of v-model-->
+			
+			<!--<button @click="taskComplete(task)"> {{task.title}} </button> --> <!--In this, the toggle function is created in the vue script-->
+			
+			<button v-bind:class="{taskItem : task.completed}" @click="task.completed =! task.completed"> {{task.title}} </button> <!--We can toggle directly with inline toggle-->		
+			<!--to toggle a class, we use v-bind, as show above, the method bellow can also be used--> <!--$event.target.classList.toggle('taskItem')-->
+			
+			<button @click="removeTask(index)">Remove</button>
+			
+		</li>
+	</ul>
+</div>
+
+
+<script>
+new Vue ({
+
+	el: "#app",
+	
+	data:{
+		newTasks: "", //The keyed letters are temporarily placed in here(with the help of v-model), this enables to initiate the event(addTasks) on both @keyup.enter and @click of button
+		
+		tasks: [
+			{title: 'Make Todo App', completed: false},
+			{title: 'Watch Avengers', completed: true},
+		],
+	},
+	
+	computed: {
+		incomplete() {
+			return this.tasks.filter(this.inProgress).length;
+		}
+	},
+  
+	
+	methods: {
+		//To add a new task to tasks object array 
+		addTasks() {
+			if (this.newTasks) { //Prevents initiation od addTasks if newTasks is empty
+				this.tasks.push({title: this.newTasks, completed:false});
+				this.newTasks=''
+			}
+		},
+		
+		//to toggle between complete and incomplete
+		taskComplete(task){
+			task.completed =! task.completed;
+		},
+		
+		//To remove task
+		removeTask(index){
+			this.tasks.splice(index, 1);
+		},
+		
+		clearCompleted() {
+			this.tasks = this.tasks.filter(this.inProgress);
+		},
+   
+		inProgress(task) {
+			return ! this.isCompleted(task);
+		},
+		isCompleted(task) {
+			return task.completed;
+		},
+		
+		//To remove All
+		removeAll(){
+			this.tasks = [];
+		},
+	},
+	
+})
+
+</script>
+
+</body>
+</html>
