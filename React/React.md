@@ -880,7 +880,7 @@ To update a task
 
 To use routing, we use the package
 
-`npm i react-router-dom`
+/
 
 In this case we are going to place the links below the page, in a footer component
 
@@ -970,6 +970,573 @@ const Header = ({title, onAdd, showAddTask}) => {
   )
 }
 ```
+
+
+
+### Authentification
+
+#### Registration 
+
+Requirements
+
+```shell
+npm i --save @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/react-fontawesome
+npm i axios
+npm i react-router-dom*** Check on this
+```
+
+Regex expressions for the fields validation
+
+```js
+const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+```
+
+For the registration in this example we will house the contents in a `AuthForm.js`, component.
+
+Imports required are:-
+
+```react
+import { useEffect, useState, useRef } from "react"
+import { json, Link, useLocation } from "react-router-dom"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import axios from "../../api/axios";
+```
+
+For validation of the forms fields, we are to use the above stated regex expressions, to ensure that the required format is inputted.
+
+Inside the component expression, we are to first set some variables
+
+```react
+//The below variables are used when toggling between the login and registration fields
+const location = useLocation()
+const condition = location.pathname === '/login' 
+const url = condition ? '/login': '/register'
+```
+
+As for the form variables, `user, pwd & email`, each variable is tied to other variables` isvalid` and `focus`. The valid variable checks if the inputted variable is of the required format as required in the Regex expressions. As for focus checks if the input field of the variable in question is highlighted. Not that the `focus` state is used with `aria` , for screen naration.
+
+```react
+const [user, setUser] = useState('')
+const [validName, setValidName] = useState(false)
+const [userFocus, setUserFocus] = useState(false) 
+
+const [email, setEmail] = useState('')
+const [validEmail, setValidEmail] = useState(false) 
+const [emailFocus, setEmailFocus] = useState(false)
+
+const [pwd, setPwd] = useState('')
+const [validPwd, setValidPwd] = useState(false) 
+const [pwdFocus, setPwdFocus] = useState(false)
+
+const [matchPwd, setMatchPwd] = useState('')
+const [validMatch, setValidMatch] = useState(false) 
+const [matchFocus, setMatchFocus] = useState(false)
+```
+
+Also we are to initialize an `errMsg` variable to store messages passed to the component, and also `success` to store success stage.
+
+```react
+const [errMsg, setErrMsg] = useState('')
+const [success, setSuccess] = useState(false)
+```
+
+Next it comes to validating the format of the inputs, in this case we are to use `useEffects`. Note that in use Effect the function will run automatically.
+
+Check w3.schools for examples on `useEffects`...The are three types of use
+
+In this case we are going to pass a dependency to the `useEffect`, in this case the `useEffect` will run only when it detects a change in the dependency.  Note that if the dependency is left blank the `useEffect` will run only during the first render, while if the dependecy list is not list, the `useEffect` will run on every render.
+
+```react
+//To validate the user name - not that the user state is in the dependacy
+    useEffect(() => {
+        const result = USER_REGEX.test(user);
+        setValidName(result)
+    }, [user]);
+
+    //To validate the EMAIL
+    useEffect(() => {
+        const result = EMAIL_REGEX.test(email);
+        setValidEmail(result)
+    }, [email])
+
+    //To validate the password
+    useEffect(() => {
+        const result = PWD_REGEX.test(pwd);
+        setValidPwd(result)
+        const match = pwd === matchPwd;
+        setValidMatch(match);
+    }, [pwd, matchPwd])
+```
+
+Also for each change in the `user,pwd, matchPwd & email` , it is prudent to set the **error message** variable to blank
+
+```react
+useEffect(() => {
+	setErrMsg('')
+}, [user, pwd, matchPwd, email])
+```
+
+Having set the variables, next is function to handle the submitted form data. In this case we are to use `fetch` for handling the `http` requests to the server... further research is required for `axios` and `flask` integration.
+
+```react
+e.preventDefault();
+	//Performing simple validation to check If button is enabled with JS hack
+ 	const v1 = USER_REGEX.test(user)
+	const v2 = PWD_REGEX.test(pwd)
+	if(!v1 || !v2){
+		setErrMsg("Invalid Entry")
+		return;
+	}
+	try{
+		const res = await fetch('/register', {
+			method: "POST",
+			headers: {
+				'Content-type': 'application/json'
+			},
+			body: JSON.stringify({user, pwd, email})
+		})
+
+	setSuccess(true);
+
+	//Clear input fields
+	setEmail('')
+	setPwd('')
+	setUser('')
+
+	} catch(err){
+        //Setting Error messages
+		if(!err?.response) {
+ 			setErrMsg('No Server Response')
+		} else if(err.response?.status === 409){
+			setErrMsg('Username Taken')
+		} else {
+			setErrMsg('Registration Failed')
+		}
+	}
+}
+
+```
+
+For the return of the we are to place the html logic, not that some of the variables are set with change in the input field, taking the userName input field as an example
+
+```react
+<input 
+	type="text" 
+	className="form-control"
+	id="userName" 
+	ref={userRef} //Further research needed on this
+	autoComplete="off" 
+	onChange={(e)=>setUser(e.target.value)} //In this case we are setting the value for the user variable
+	onFocus = {() => setUserFocus(true)} 
+	onBlur = {() => setUserFocus(false)}                           required
+/>
+```
+
+
+
+Hence the complete component is as indicated below, not that it is used for both the login and registration
+
+```react
+import { useEffect, useState, useRef } from "react"
+import { json, Link, useLocation } from "react-router-dom"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import axios from "../../api/axios";
+
+
+const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+
+const AuthForm = () => {
+    const location = useLocation()
+    const condition = location.pathname === '/login' 
+    const url = condition ? '/login': '/register'
+    
+
+    const userRef = useRef();
+    const errRef = useRef();
+
+    const [user, setUser] = useState('')
+    const [validName, setValidName] = useState(false) //Tied with whether the userName validates or not
+    const [userFocus, setUserFocus] = useState(false) //Tied with whether we are focused into the user filed or not
+
+    const [email, setEmail] = useState('')
+    const [validEmail, setValidEmail] = useState(false) 
+    const [emailFocus, setEmailFocus] = useState(false)
+
+    const [pwd, setPwd] = useState('')
+    const [validPwd, setValidPwd] = useState(false) 
+    const [pwdFocus, setPwdFocus] = useState(false)
+
+    const [matchPwd, setMatchPwd] = useState('')
+    const [validMatch, setValidMatch] = useState(false) 
+    const [matchFocus, setMatchFocus] = useState(false)
+
+    const [errMsg, setErrMsg] = useState('')
+    const [success, setSuccess] = useState(false)
+
+    useEffect(() => {
+        userRef.current.focus(); // Note for this to work userRef must be used inside the html elements
+        //Note that the above code functions like e.target.value = It gets the current value of the the user input
+    }, [])
+
+    //To validate the user name - not that the user state is in the dependacy
+    useEffect(() => {
+        const result = USER_REGEX.test(user);
+        console.log(result);
+        console.log(user)
+        setValidName(result)
+    }, [user]);
+
+    //To validate the EMAIL
+    useEffect(() => {
+        const result = EMAIL_REGEX.test(email);
+        console.log(result);
+        console.log(email)
+        setValidEmail(result)
+    }, [email])
+
+    //To validate the password
+    useEffect(() => {
+        const result = PWD_REGEX.test(pwd);
+        console.log(result);
+        console.log(pwd)
+        setValidPwd(result)
+        const match = pwd === matchPwd;
+        setValidMatch(match);
+    }, [pwd, matchPwd])
+    
+
+    useEffect(() => {
+      setErrMsg('')
+    }, [user, pwd, matchPwd, email])
+    
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        //If button is enabled with JS hack
+        const v1 = USER_REGEX.test(user)
+        const v2 = PWD_REGEX.test(pwd)
+        if(!v1 || !v2){
+            setErrMsg("Invalid Entry")
+            return;
+        }
+        try{
+            // const res = await axios.post(url,
+            //     JSON.stringify({user, pwd, email}),
+            //     {
+            //         headers: {
+            //             'Content-type': 'application/json'
+            //           },
+            //           withCredentials: true
+            //     }
+            // );
+
+            const res = await fetch('/register', {
+                method: "POST",
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({user, pwd, email})
+            })
+
+            setSuccess(true);
+
+            //Clear input fields
+            setEmail('')
+            setPwd('')
+            setUser('')
+
+        } catch(err){
+            if(!err?.response) {
+                setErrMsg('No Server Response')
+            } else if(err.response?.status === 409){
+                setErrMsg('Username Taken')
+            } else {
+                setErrMsg('Registration Failed')
+            }
+        }
+        
+    }
+
+  return (
+    <div className="tab-content">
+        <p ref={errRef} style={errMsg ? errmsg : offscreen }>{errMsg}</p>
+        <div className="tab-pane fade show active" id="pills-login" role="tabpanel">
+            <form onSubmit={handleSubmit}>
+                {condition ? 
+                    (<p className="text-center mb-3">Sign in with:</p>) :       
+                    (<p className="text-center mb-3">Sign up with:</p>)
+                }
+
+                <div className="form-outline mb-4">
+                    <label className="form-label" htmlFor="userName">
+                        Username:
+                        {!condition && (
+                        <>
+                            <FontAwesomeIcon icon={faCheck}  style={validName ? valid : hide} />
+                            <FontAwesomeIcon icon={faTimes} style={validName || !user ? hide :  invalid } />
+                        </>)}
+                        
+                    </label>
+                    <input 
+                        type="text" 
+                        className="form-control"
+                        id="userName" 
+                        ref={userRef}
+                        autoComplete="off"
+                        onChange={(e)=>setUser(e.target.value)}
+                        onFocus = {() => setUserFocus(true)}
+                        onBlur = {() => setUserFocus(false)}                                                                                                                                                                                                                                                                                                    
+                        required
+                    />
+                    {!condition && (
+                    <p id="uidnote" style={userFocus && user && !validName ? instructions : offscreen}>
+                        <FontAwesomeIcon icon={faInfoCircle} />
+                        4 to 24 characters.<br />
+                        Must begin with a letter.<br />
+                        Letters, numbers, underscores, hyphens allowed.
+                    </p>
+                    )}
+                    
+                    
+                </div>
+
+                {!condition && (
+                    <div className="form-outline mb-4">
+                        <label className="form-label" htmlFor="email">
+                            Email:
+                            <FontAwesomeIcon icon={faCheck}  style={validEmail ? valid : hide} />
+                            <FontAwesomeIcon icon={faTimes} style={validEmail || !email ? hide :  invalid } />
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            className="form-control" 
+                            name="email" 
+                            placeholder="Email Address" 
+                            autoComplete="off"
+                            onChange={(e)=>setEmail(e.target.value)}
+                            onFocus = {() => setEmailFocus(true)}
+                            onBlur = {() => setEmailFocus(false)}
+                            required
+                        />
+                        <p id="uidnote" style={userFocus && user && !validName ? instructions : offscreen}>
+                            <FontAwesomeIcon icon={faInfoCircle} />
+                            Must be of valid email format.
+                        </p>
+                    </div>
+                )}
+        
+                <div className="form-outline mb-4">
+                    <label className="form-label" htmlFor="password">
+                        Password:
+                        {!condition && (
+                        <>
+                            <FontAwesomeIcon icon={faCheck}  style={validPwd ? valid : hide} />
+                            <FontAwesomeIcon icon={faTimes} style={validPwd || !pwd ? hide :  invalid } />   
+                        </>)}
+                        
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        className="form-control" 
+                        name="password" 
+                        onChange={(e)=>setPwd(e.target.value)}
+                        onFocus = {() => setPwdFocus(true)}
+                        onBlur = {() => setPwdFocus(false)}
+                        required
+                    />
+                    {!condition && (
+                        <p id="pwdnote" style={pwdFocus && !validPwd ? instructions : offscreen}>
+                            <FontAwesomeIcon icon={faInfoCircle} />
+                            8 to 24 characters.<br />
+                            Must include uppercase and lowercase letters, a number and a special character.<br />
+                            Allowed special characters: <span>! @ # $ % </span>
+                        </p>
+                    )}
+                    
+                </div>
+
+                {!condition && (
+                    <div className="form-outline mb-4">
+                        <label className="form-label" htmlFor="registerRepeatPassword">
+                            Confirm password:
+                            <FontAwesomeIcon icon={faCheck}  style={validMatch && matchPwd ? valid : hide} />
+                            <FontAwesomeIcon icon={faTimes} style={validMatch || !matchPwd ? hide :  invalid } />
+                        </label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            className="form-control" 
+                            name="confirmation" 
+                            placeholder="Confirm Password" 
+                            onChange={(e)=>setMatchPwd(e.target.value)}
+                            onFocus = {() => setMatchFocus(true)}
+                            onBlur = {() => setMatchFocus(false)}
+                            required
+                        /> 
+                        <p id="pwdnote" style={matchFocus && !validMatch ? instructions : offscreen}>
+                            <FontAwesomeIcon icon={faInfoCircle} />
+                            Must match the first password input field
+                        </p>
+                    </div>
+                )}
+
+                {/* Submit button  */}
+                <input 
+                    type="submit"
+                    className="btn btn-primary btn-block mb-4" 
+                    style={{width: "100%"}}
+                    value={`Sign ${condition? "in" : "up"}`} 
+                    disabled={!validName || !condition && !validEmail || !validPwd || !condition && !validMatch ? true : false}
+                />
+                {/* Register buttons */}
+                {condition && (
+                    <div className="text-center">
+                        <p>Not a member? <Link to="/register" className="reg-link">Register</Link></p>
+                    </div>
+                )}
+                
+            </form> 
+        </div>
+    </div>
+  )
+}
+
+//Styling
+const valid = {
+    color: "limegreen",
+    marginLeft: "0.25rem",
+}
+
+const instructions = {
+    fontSize: '0.75rem',
+    borderRadius: "0.5rem",
+    background: "#000",
+    color: "#fff",
+    padding: "0.25rem",
+    position: "relative",
+    bottom: "-10px",
+}
+
+const offscreen =  {
+    position: 'absolute',
+    left: "-9999px",
+}
+
+const hide = {
+    display: "none",
+}
+
+const invalid = {
+    color: "red",
+    marginLeft: "0.25rem",
+}
+
+const errmsg = {
+    backgroundColor: "lightpink",
+    color: "firebrick",
+    fontWeight: "bold",
+    padding: "0.5rem",
+    marginBottom: "0.5rem",
+}
+
+const line = {
+    display: "inline-block"
+}
+
+export default AuthForm
+```
+
+
+
+### Login
+
+For the jsx and variables it is set-up as the above, but in this case only the `user` and `pwd` variables are required. 
+
+In this section we are incorporate `useContext` as  `AuthProvider` , which is to store the `user` and `pwd` globally. In this case the `user` and `pwd` will be passed from the `AuthForm` to the global scope.
+
+To set up `context` , we will create a context folder and under it create `AuthProvider.js`
+
+```React
+import { createContext, useState } from "react";
+
+//Init createContext
+const AuthContext = createContext({})
+
+export const AuthProvider = ({children}) => {
+    const [auth, setAuth] = useState({}) 
+  	return (
+    	//Rapping up the children(tree with the creatContext instance, in this case 					AuthContext)
+    	//Also passing the values to the context i.e in the value part
+    	<AuthContext.Provider value={{auth, setAuth}}>
+        	{children}
+    	</AuthContext.Provider>
+ 	)
+}
+
+export default AuthContext; // Contains the variables to be used in the global scope
+
+```
+
+The above created component is then imported to the index.js app
+
+```react
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import { AuthProvider } from './context/AuthProvider';
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  
+  <React.StrictMode>
+    <AuthProvider>
+		<App />
+    </AuthProvider>
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
+```
+
+
+
+To use the `Auth Context`, we will have to import `useContext`, and also the `AuthContext` inside the component we want it, hence in this case we are to import it into the `AuthForm` component.
+
+```react
+import { useEffect, useState, useRef, useContext } from "react"
+import AuthContext from './context/AuthProvider' //It contains the global data
+```
+
+
+
+Note that `AuthContext`, carries the variables to be used in the global state. To retrive the data into our component 
+
+```react
+const {setAuth} = useContext(AuthContext)
+```
+
+To set the value for `setAuth` once the form is submiites successfully, inside the `handleSubmit` function
+
+```react
+setAuth({user, pwd, email})
+```
+
+With this we can use the above data on any component of the app.
 
 
 
