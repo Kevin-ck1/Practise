@@ -408,7 +408,7 @@ export default Tasks
 
 
 
-To Change tasks, we will have to recreate it,, with the use of *setTasks*
+To Change tasks, we will have to recreate it, with the use of *setTasks*
 
 `setTasks([...tasks, {newObject}])`
 
@@ -1457,7 +1457,7 @@ export default AuthForm
 
 
 
-### Login
+#### Login
 
 For the jsx and variables it is set-up as the above, but in this case only the `user` and `pwd` variables are required. 
 
@@ -1537,6 +1537,59 @@ setAuth({user, pwd, email})
 ```
 
 With this we can use the above data on any component of the app.
+
+
+
+### Protected Routes
+
+In this part, we are to restrict some routes. 
+
+In this case we will create a component that will contain logic that will check for authentification, in our case we will create a **RequireAuth** component.
+
+```react
+import { useContext } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import AuthContext from "../../context/AuthProvider";
+
+const RequireAuth = () => {
+    //Retrive the auth from the global scope
+    const {auth} = useContext(AuthContext)
+
+    const location = useLocation();
+    return (
+        //First we check if the auth object has user
+        //If true, using ternary operator, we will house the components inside the outlet
+        //If false, the user is to be navigated to the login page
+        //Note that we have set state so that once the user is logged in is redirect back.
+        auth?.user ? <Outlet/> : <Navigate to="/login" state={{from: location}} replace/>
+    )
+}
+
+export default RequireAuth
+```
+
+
+
+To protect the routes, we are to house the routes, the said routes are to be housed under the **RequireAuth** component. With the use of the **Outlet**, we are able to convert a **Route** to function as **Routes**.
+
+Hence inside the **App.js**
+
+```React
+<Router>
+    <div className="App">
+        <Nav></Nav>
+        <Routes>
+            <Route path="/" exact element= {<Welcome></Welcome>}/>
+            <Route path="/login" element = {<Auth/>}/>
+            <Route path="/register" element = {<Auth/>}/>
+            {/* Protected routes */}
+            <Route element={<RequireAuth/>} >
+                <Route path="/products" element={<Products/>} />
+            </Route>
+        </Routes>
+    </div>
+</Router>
+```
 
 
 

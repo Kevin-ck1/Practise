@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template,  jsonify, request, json
+from flask import Blueprint, render_template,  jsonify, request, json, make_response
 from . import db, decrypt
 from .models import *
+from flask_login import login_user, current_user, logout_user, login_required
 
 
 #For print functions
@@ -40,23 +41,52 @@ def movies():
 
 #Registration
 @main.route('/register', methods=['POST'])
-def add_user():
+def register_user():
     user_data = request.get_json()
-    print(user_data, file=sys.stderr)
+    username = user_data["user"]
+    email = user_data["email"]
+    check_username = User.query.filter_by(user=username).first()
+    check_email = User.query.filter_by(email=email).first()
+    if check_username:
+        return make_response(jsonify({"msg":"Username Already Exists"}), 409)
+        #return jsonify("Username Already Exists")
+    elif check_email:
+        return make_response(jsonify({"msg": "Email Already Exists"}), 409)
+    
     #To hash the pass
     hashed_pwd = decrypt.generate_password_hash(user_data["pwd"]).decode('utf-8')
-    print(hashed_pwd, file=sys.stderr)
-    user_data.pop("pwd", hashed_pwd)
-    user_data["pwd"] = hashed_pwd
-    user = User(**user_data)
+    user = User(user = username, email=email, pwd=hashed_pwd)
     db.session.add(user)
     db.session.commit()
+    login_user(user)
+    res_data = {
+            "msg": "User Added",
+            "roles": "user"
+        }
+    return make_response(jsonify(res_data),201)
 
-    print(user_data, file=sys.stderr)
-    print("Hello Registration", file=sys.stderr)
+@main.route('/login',  methods=['POST'])
+def login():
+    user_data = request.get_json()
+    username = user_data["user"]
+    check_username = User.query.filter_by(user=username).first()
 
-    #return jsonify({'msg': "Details Received"})
-    return JsonResponse(status = 201)
+    if check_username and decrypt.check_password_hash(check_username.pwd, user_data["pwd"]):
+        #Login Successfull
+        login_user(check_username) # Sets the current user to the user provided
+        res_data = {
+            "msg": "Login Successfull",
+            "roles": "user"
+        }
+        return make_response(jsonify(res_data), 201) 
+    else:
+       return make_response(jsonify({'msg': "Invalid Username or Password"}), 409) 
+
+
+@main.route("/logout")
+def logout():
+    logout_user()
+    return jsonify({'msg': "Logged Out"})
 
 @main.route(('/getUsers'))
 def get_users():

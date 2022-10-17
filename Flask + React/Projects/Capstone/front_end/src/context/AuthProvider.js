@@ -5,8 +5,10 @@ const AuthContext = createContext({})
 
 export const AuthProvider = ({children}) => {
     const [auth, setAuth] = useState({}) 
+    // const data = localStorage.getItem('auth') || ""
+   // setAuth(data)
     return (
-      //Rapping up the children(tree with the creatContext instance, in this case AuthContext)
+      //Raping up the children(tree with the creatContext instance, in this case AuthContext)
       //Also passing the values to the context i.e in the value part
       <AuthContext.Provider value={{auth, setAuth}}>
           {children}

@@ -1,4 +1,5 @@
 from . import db, ma
+from flask_login import UserMixin
 
 class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,7 +19,7 @@ class MovieSchema(ma.Schema):
 movie_schema = MovieSchema()
 movies_schema = MovieSchema(many=True)
 
-class User(db.Model):
+class User(UserMixin, db.Model):
   id = db.Column(db.Integer, primary_key=True)
   user = db.Column(db.String(24))
   email = db.Column(db.String(50))

@@ -1,7 +1,10 @@
-import React from 'react'
+import { useContext } from 'react'
 import { Link } from 'react-router-dom'
+import AuthContext from '../context/AuthProvider'
+
 
 const Nav = () => {
+  const {auth} = useContext(AuthContext)
   return (
     <div>
         <nav className="navbar navbar-expand-lg navbar-light " style={{backgroundColor: "#e3f2fd"}}>
@@ -16,7 +19,7 @@ const Nav = () => {
                     <Link className="nav-link active" aria-current="page" to="/">Home</Link>
                   </li>
                   <li className="nav-item">
-                    <Link className="nav-link" to="#">Products</Link>
+                    <Link className="nav-link" to="/products">Products</Link>
                   </li>
                   <li className="nav-item">
                     <Link className="nav-link" to="#">Suppliers</Link>
@@ -27,7 +30,7 @@ const Nav = () => {
                   </li>
 
                   <li className="nav-item">
-                    <Link className="nav-link" to="#">Jobs</Link>
+                    <Link className="nav-link" to="/jobs">Jobs</Link>
                   </li>
                 </ul>
                 <div className="navbar-text">
@@ -39,7 +42,15 @@ const Nav = () => {
                   {%else%}
                     <Link to="{% url 'company:login' %}?next={% firstof request.path '/' %}">Login</Link>
                   {%endif%} */}
-                  <Link to="/login">Login</Link>
+                  {auth?.user ? 
+                    (
+                      <div className="d-flex justify-content-between">
+                        <p className="mx-2">{auth.user}</p>
+                        <Link to="/logout">Logout</Link>
+                      </div>
+                    ):
+                    (<Link to="/login">Login</Link>) 
+                  }
                 </div>
               </div>
             </div>

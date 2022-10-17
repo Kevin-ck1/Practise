@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef, useContext } from "react"
-import { json, Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 //import axios from "../../api/axios";
 import AuthContext from "../../context/AuthProvider"; //It contains the global data
-import UsersContext from "../../context/UsersProvider";
 
 
 
@@ -17,10 +16,10 @@ const AuthForm = () => {
     const {setAuth} = useContext(AuthContext)
     const location = useLocation()
     const condition = location.pathname === '/login' 
-
-    //To retrieve global user data
-    const {users, setUsers} = useContext(UsersContext)
-    //const {users} = useContext(UsersContext)
+    const navigate = useNavigate();
+    //To check if the location variable has a from state - This is set in the RequireAuth
+    //If from state is missing we set the default to "/"
+    const from = location.state?.from?.pathname || "/"
     
     const userRef = useRef();
     const errRef = useRef();
@@ -42,19 +41,7 @@ const AuthForm = () => {
     const [matchFocus, setMatchFocus] = useState(false)
 
     const [errMsg, setErrMsg] = useState('')
-    const [success, setSuccess] = useState(false)
 
-    //Retrieving User Data
-    // useEffect(() => {
-    //     fetch_users()
-    // }, [])
-
-    // const fetch_users = async () =>{
-    //     const res = await fetch('/getUsers')
-    //     const data = await res.json()
-    //     await setUsers(data)
-    // }
-    
     useEffect(() => {
         userRef.current.focus(); // Note for this to work userRef must be used inside the html elements
         //Note that the above code functions like e.target.value = It gets the current value of the the user input
@@ -84,6 +71,30 @@ const AuthForm = () => {
     useEffect(() => {
       setErrMsg('')
     }, [user, pwd, matchPwd, email])
+
+    const register = async()=>{
+        const res = await fetch('/register', {
+            method: "POST",
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: JSON.stringify({user, pwd, email})
+        })
+
+        return res
+    }
+
+    const login = async()=>{
+        const res = await fetch('/login', {
+            method: "POST",
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: JSON.stringify({user, pwd, email})
+        })
+
+        return res
+    }
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -94,51 +105,29 @@ const AuthForm = () => {
             setErrMsg("Invalid Entry")
             return;
         }
-        try{
-            // const res = await axios.post(url,
-            //     JSON.stringify({user, pwd, email}),
-            //     {
-            //         headers: {
-            //             'Content-type': 'application/json'
-            //           },
-            //           withCredentials: true
-            //     }
-            // );
-            const check_user = users.filter( a => {return a.user === user })
-            
-            if(check_user.length === 0) {
-                const res = await fetch('/register', {
-                    method: "POST",
-                    headers: {
-                        'Content-type': 'application/json'
-                    },
-                    body: JSON.stringify({user, pwd, email})
-                })
+        const res = condition ?await login() : await register() 
+        var res_data = await res.json() || ""
 
-                console.log(res)
-                //Passing the user, pwd, email to global scope on login in
-                condition && setAuth({user, pwd, email})
-                setSuccess(true);
-    
-                //Clear input fields
-                setEmail('')
-                setPwd('')
-                setUser('')
-            }else{
-                console.log("User Already exist")
-            }
-            
+        if (res.status === 409){
+            //setErrMsg((await res.json()).msg)
+            setErrMsg(res_data.msg)
+        } else if(res.status === 500) {
+            setErrMsg('No Server Response')
+        } else {
+            //Passing the user, pwd to global scope on login in
+            condition && setAuth({user, pwd})
+            localStorage.setItem("auth", {user, pwd, roles:res_data.roles})
+            console.log(res_data.msg)
+            console.log(res_data.roles)
+            console.log({user, pwd, roles:res_data.roles})
+            //Clear input fields
+            setEmail('')
+            setPwd('')
+            setUser('') 
 
-        } catch(err){
-            console.log(err)
-            if(!err?.response) {
-                setErrMsg('No Server Response')
-            } else if(err.response?.status === 409){
-                setErrMsg('Username Taken')
-            } else {
-                setErrMsg('Registration Failed')
-            }
+            navigate(from, {replace: true})
         }
+        
         
     }
 
@@ -167,7 +156,7 @@ const AuthForm = () => {
                         className="form-control"
                         id="userName" 
                         ref={userRef}
-                        autoComplete="off"
+                        // autoComplete="off"
                         onChange={(e)=>setUser(e.target.value)}
                         onFocus = {() => setUserFocus(true)}
                         onBlur = {() => setUserFocus(false)}                                                                                                                                                                                                                                                                                                    
@@ -198,7 +187,7 @@ const AuthForm = () => {
                             className="form-control" 
                             name="email" 
                             placeholder="Email Address" 
-                            autoComplete="off"
+                            // autoComplete="off"
                             onChange={(e)=>setEmail(e.target.value)}
                             onFocus = {() => setEmailFocus(true)}
                             onBlur = {() => setEmailFocus(false)}
@@ -326,8 +315,8 @@ const errmsg = {
     marginBottom: "0.5rem",
 }
 
-const line = {
-    display: "inline-block"
-}
+// const line = {
+//     display: "inline-block"
+// }
 
 export default AuthForm

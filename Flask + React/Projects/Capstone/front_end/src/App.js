@@ -1,36 +1,17 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom"
 import './App.css';
 import Auth from "./components/login/Auth";
+import RequireAuth from "./components/login/RequireAuth";
 import Nav from "./components/Nav";
+import Products from "./components/products/Products";
 import Welcome from "./components/Welcome";
-import UsersContext from "./context/UsersProvider";
-
-
+import AuthContext from "./context/AuthProvider";
 
 function App() {
-  // useEffect(() => {
-  //   const fetchMovies = async() => {
-  //     const res =  await fetch('/t')
-  //     const data = await res.json()
-  //     //setMovies(data.movies)
-  //     console.log(data)
-  //   }
-
-  //   fetchMovies()
-  // }, [])
-  //To retrieve global user data
-  const {setUsers} = useContext(UsersContext)
-  useEffect(() => {
-      fetch_users()
-  }, [])
-
-  const fetch_users = async () =>{
-      const res = await fetch('/getUsers')
-      const data = await res.json()
-      await setUsers(data)
-  }
-
+  // const {setAuth} = useContext(AuthContext);
+  // const data = localStorage.getItem("auth") || "";
+  // setAuth(data)
   return (
     <Router>
       <div className="App">
@@ -39,8 +20,11 @@ function App() {
           <Route path="/" exact element= {<Welcome></Welcome>}/>
           <Route path="/login" element = {<Auth/>}/>
           <Route path="/register" element = {<Auth/>}/>
+          {/* Protected routes */}
+          <Route element={<RequireAuth/>} >
+            <Route path="/products" element={<Products/>} />
+          </Route>
         </Routes>
-        
       </div>
     </Router>
   );
