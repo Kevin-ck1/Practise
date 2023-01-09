@@ -13,7 +13,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AuthForm = () => {
     //To retrieve the global data and set it to a variable
-    const {setAuth} = useContext(AuthContext)
+    const {auth, setAuth } = useContext(AuthContext)
     const location = useLocation()
     const condition = location.pathname === '/login' 
     const navigate = useNavigate();
@@ -42,9 +42,17 @@ const AuthForm = () => {
 
     const [errMsg, setErrMsg] = useState('')
 
+    // const [reminder, setReminder] = useState()
+
+    // //Set Default vaule of Reminder
+    // useEffect(()=>{
+    //     setReminder(JSON.parse(localStorage.getItem("reminder")) || false)
+    // },[])
+
     useEffect(() => {
         userRef.current.focus(); // Note for this to work userRef must be used inside the html elements
         //Note that the above code functions like e.target.value = It gets the current value of the the user input
+        //In the above code, useRef is used to access a specific DOM element
     }, [])
 
     //To validate the user name - not that the user state is in the dependacy
@@ -115,20 +123,26 @@ const AuthForm = () => {
             setErrMsg('No Server Response')
         } else {
             //Passing the user, pwd to global scope on login in
-            condition && setAuth({user, pwd})
-            localStorage.setItem("auth", {user, pwd, roles:res_data.roles})
-            console.log(res_data.msg)
-            console.log(res_data.roles)
-            console.log({user, pwd, roles:res_data.roles})
-            //Clear input fields
+            const auth_data = {user, roles:res_data.roles, access_token:res_data.access_token, refresh_token:res_data.refresh_token}
+            condition && setAuth(auth_data)
+            if(localStorage.getItem("reminder")){
+                localStorage.setItem("auth", JSON.stringify(auth_data)) 
+            }else{
+                console.log("Session will be deleted on refresh")
+            }
+
+            //Clear input field
             setEmail('')
             setPwd('')
             setUser('') 
 
             navigate(from, {replace: true})
         }
-        
-        
+    } 
+
+    const toggleReminder = (reminder)=> {
+        // setReminder(reminder)
+        localStorage.setItem("reminder", JSON.stringify(reminder))
     }
 
   return (
@@ -255,6 +269,19 @@ const AuthForm = () => {
                         </p>
                     </div>
                 )}
+                {/* Below is code for Remember me */}
+                <div className="form-outline mb-4 col-sm-4 ">
+                    <div className="form-check mb-4">
+                        <label className="form-check-label" htmlFor="loginCheck"> Remember me </label>
+                        <input 
+                            className="form-check-input" 
+                            type="checkbox" 
+                            value="" 
+                            id="checkBox"
+                            onChange={(e) => toggleReminder(e.target.checked)} 
+                        />  
+                    </div>
+                </div> 
 
                 {/* Submit button  */}
                 <input 

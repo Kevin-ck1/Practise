@@ -1,10 +1,13 @@
 import { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import AuthContext from '../context/AuthProvider'
+import Logout from './hooks/Logout'
 
 
 const Nav = () => {
   const {auth} = useContext(AuthContext)
+  const logout = Logout()
+  var links = ["products", "suppliers", "clients","jobs", "admin" ]
   return (
     <div>
         <nav className="navbar navbar-expand-lg navbar-light " style={{backgroundColor: "#e3f2fd"}}>
@@ -18,35 +21,22 @@ const Nav = () => {
                   <li className="nav-item">
                     <Link className="nav-link active" aria-current="page" to="/">Home</Link>
                   </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/products">Products</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="#">Suppliers</Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link className="nav-link" to="#">Clients</Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/jobs">Jobs</Link>
-                  </li>
+                  {
+                    links.map((link, i)=>{
+                      return(
+                        <li className="nav-item" key={i}>
+                          <Link className="nav-link" to={link}>{link.charAt(0).toUpperCase() + link.slice(1)}</Link>
+                        </li>
+                      )
+                    })
+                  }
                 </ul>
                 <div className="navbar-text">
-                  {/* {%if user.is_authenticated  %}
-                    <div className="d-flex justify-content-between">
-                      <p className="mx-1">{{user.username}}</p>
-                      <Link to="{% url 'company:logout' %}">Logout</Link>
-                    </div>
-                  {%else%}
-                    <Link to="{% url 'company:login' %}?next={% firstof request.path '/' %}">Login</Link>
-                  {%endif%} */}
                   {auth?.user ? 
                     (
                       <div className="d-flex justify-content-between">
                         <p className="mx-2">{auth.user}</p>
-                        <Link to="/logout">Logout</Link>
+                        <Link onClick={logout}>Logout</Link>
                       </div>
                     ):
                     (<Link to="/login">Login</Link>) 

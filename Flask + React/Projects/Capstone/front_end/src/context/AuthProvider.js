@@ -1,14 +1,18 @@
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 
 //Init createContext
 const AuthContext = createContext({})
 
 export const AuthProvider = ({children}) => {
     const [auth, setAuth] = useState({}) 
-    // const data = localStorage.getItem('auth') || ""
-   // setAuth(data)
+    useEffect(() => {
+      const auth_data = JSON.parse(localStorage.getItem('auth')) || ""
+      setAuth(auth_data)
+    },[])
+    
+    
     return (
-      //Raping up the children(tree with the creatContext instance, in this case AuthContext)
+      //Rapping up the children(tree with the creatContext instance, in this case AuthContext)
       //Also passing the values to the context i.e in the value part
       <AuthContext.Provider value={{auth, setAuth}}>
           {children}

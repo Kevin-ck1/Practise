@@ -3,7 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
-
+from flask_jwt_extended import JWTManager
+from datetime import timedelta
 
 
 #Setting up a database object
@@ -17,6 +18,9 @@ decrypt = Bcrypt()
 
 #Setting up login manager
 login_manager = LoginManager()
+
+#Setting up JWT Manager
+jwt_manager = JWTManager()
 
 
 
@@ -36,6 +40,10 @@ def create_app():
     SECRET_KEY = os.urandom(32)
     app.config['SECRET_KEY'] = SECRET_KEY
 
+    # To change exp time of the tokens
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=10)
+
     #Initialiaze a database + Marshmellow 
     db.init_app(app)
     ma.init_app(app)
@@ -44,6 +52,17 @@ def create_app():
 
     #Initialiazing the login manager
     login_manager.init_app(app)
+    
+    login_manager.login_view = 'login'
+    login_manager.login_message_category = 'info'
+
+    from .models import User
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(user_id)
+
+    #Initialiazing the jwt manager
+    jwt_manager.init_app(app)
 
     #Setting up the blueprints
     from .views import main #Importing the blue  prints

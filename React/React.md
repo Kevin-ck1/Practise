@@ -1593,3 +1593,66 @@ Hence inside the **App.js**
 
 
 
+#### Role Based Authorization
+
+We can further protect the routes by assigning specific roles to the the paths, i,e admin or user.
+
+To do this we are to modify the **RequireAuth** component,
+
+```react
+import { useContext } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import AuthContext from "../../context/AuthProvider";
+
+const RequireAuth = ({allowedRoles}) => {
+    //Retrive the auth from the global scope
+    const {auth} = useContext(AuthContext)
+
+    const location = useLocation();
+    return (
+        //We Check if the Auth object has any roles
+        //If any, we loop through the roles and check in the allowedRoles if we have a match
+        //If the user is loged in and not authorized we can redirect the user to an autorized page
+        auth?.roles?.find(role => allowedRoles?.includes(role)) 
+            ? <Outlet/> 
+            : auth?.user
+                ? <Navigate to="/unauthorized" state={{from:location}} replace/>
+                :<Navigate to="/login" state={{from: location}} replace/>
+    )
+}
+
+export default RequireAuth
+```
+
+And on the **App.js**, 
+
+```react
+<Router>
+    <div className="App">
+        <Nav></Nav>
+        <Routes>
+            <Route path="/" exact element= {<Welcome></Welcome>}/>
+            <Route path="/login" element = {<Auth/>}/>
+            <Route path="/register" element = {<Auth/>}/>
+            <Route path="/unauthorized" element = {<Unauthorized/>}/>
+            {/* Protected routes */}
+            <Route element={<RequireAuth allowedRoles = {[2001, 1984]}/>} >
+                <Route path="/products" element={<Products/>} />
+            </Route>
+            <Route element={<RequireAuth allowedRoles = {[1984]}/>} >
+                <Route path="/jobs" element={<Jobs/>} />
+            </Route>
+        </Routes>
+    </div>
+</Router>
+```
+
+
+
+### JWT 
+
+Json Web Tokens - Its a refresh token
+
+Refresh token - Grant a user authentication privilege's for a longer period of time
+
+Access token - Shorter period of time

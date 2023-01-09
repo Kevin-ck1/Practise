@@ -628,3 +628,195 @@ if __name__ == '__main__':
     app.run(debug=True)  
 ```
 
+
+
+## Decorators
+
+In this case we are to create a simple decorator that checks for username and password to allow access to a particular route.
+
+For the purpose of the demonstration, the username and password to be passed through the header... to do so we use the `{'WWW-Authenticate': 'Basic realm="Login Required"'}`
+
+The code to collect and validate the data, and also to input the data is as shown below
+
+```python
+@main.route('/t')
+def test():
+    if request.authorization and request.authorization.username == 'username' and request.authorization.password == 'password':
+        return '<h1>You are logged in!</h1>'
+    else:
+        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+```
+
+
+
+Decorates are functions that contain functionalities that can be attached to another function.
+
+Below is an example of a python decorator.... outside flask constraints
+
+```python
+def testDecorators(f):
+    def wrapper(*args, **kwargs):
+        print("Statement Before Function")
+        f(*args, **kwargs)
+        print("After Statement")
+    return wrapper
+
+@testDecorators
+def printName(name):
+    print(name)
+    
+printName("Kevin")
+```
+
+In the above case we have attached the function `printName` to the decorator `testDeocrators`... And in the decorator it receives the function (f) i.e (printName). Since the `printName` function has an argument, to pass on the arguments to the decorator we use the `(*args, **kwargs)` .
+
+Decorators can also have arguments as shown below
+
+```python
+def testDecorators(msg):
+    def decorator(f):
+        def wrapper(*args, **kwargs):
+            print(f"The message is {msg}")
+            print("Statement Before Function")
+            f(*args, **kwargs)
+            print("After Statement")
+        return wrapper
+    return decorator
+
+@testDecorators(msg="Hello")
+def printName(name):
+    print(name)
+    
+printName("Kevin")
+```
+
+We can also stack two decorators ontop of each other
+
+```python
+from functools import wraps
+
+
+def my_logger(orig_func):
+    import logging
+    logging.basicConfig(filename='{}.log'.format(orig_func.__name__), level=logging.INFO)
+
+    #@wraps(orig_func)
+    def wrapper(*args, **kwargs):
+        logging.info(
+            'Ran with args: {}, and kwargs: {}'.format(args, kwargs))
+        return orig_func(*args, **kwargs)
+
+    return wrapper
+
+
+def my_timer(orig_func):
+    import time
+
+    @wraps(orig_func)
+    def wrapper(*args, **kwargs):
+        t1 = time.time()
+        result = orig_func(*args, **kwargs)
+        t2 = time.time() - t1
+        print('{} ran in: {} sec'.format(orig_func.__name__, t2))
+        return result
+
+    return wrapper
+
+import time
+
+
+@my_logger
+@my_timer
+def display_info(name, age):
+    time.sleep(1)
+    print('display_info ran with arguments ({}, {})'.format(name, age))
+
+display_info('Tom', 22)
+```
+
+Note that in this case we have the decorator `@wraps()` inside out two decorators. Imported from functools,  the `@wraps()` decorator, eliminates scheduling issues depending on how we stack our we stack the decorators. It enables a decorator to return the original function passed into it so that it can be used with the next decorator.
+
+## PyJWT
+
+It is a library that allows someone to  encode and decode JWT
+
+To install it 
+
+```shell
+pip install pyjwt
+```
+
+To encode data i.e creating a token
+
+```python
+token = jwt.encode(
+    {
+        "id" : check_username.id, ## Info to encode
+        'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=45) ## Expire time
+    },
+    "SECRET_KEY", #Encoding key
+    algorithm='HS256' # hash algorith to be used
+)
+```
+
+The above can be placed inside the login function so that the token is generated upon a user logging in.
+
+To decode the message we can place the decoding code inside a decorator
+
+```python
+data = jwt.decode(token,"SECRET_KEY", algorithms =['HS256'])
+```
+
+Below is an example of a decorator
+
+```python
+def token_required(f):
+	@wraps(f)
+    def decorator(*args, **kwargs):  
+        token = None
+        if "Authorization" in request.headers:
+            token = request.headers["Authorization"].split()[1]
+        if not token:
+            return jsonify({'message': "a valid token is missing"})
+        try:
+            data = jwt.decode(token,"SECRET_KEY", algorithms =['HS256'])
+            current_user = User.query.filter_by(id=data['id']).first()
+        except:
+            return jsonify({'message': 'token is invalid'})
+            
+        return f(*args, **kwargs)
+    return decorator
+```
+
+
+
+## Flask-JWT-Extended
+
+similar to pyJWT
+
+To install
+
+```shell
+pip install flask-jwt-extended
+```
+
+To encode data
+
+```python
+access_token = create_access_token(identity=username)
+```
+
+To protect a route
+
+```python
+@main.route(('/getUsers'))
+@jwt_required()
+def get_users():
+```
+
+To decode the data
+
+```python
+current_user = get_jwt_identity()
+```
+
