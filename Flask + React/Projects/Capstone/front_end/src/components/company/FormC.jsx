@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useEffect } from "react"
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Company } from "../hooks/CompanyObject"
 import GetVar from "../hooks/GetVar"
 import "../../index.css"
@@ -12,8 +12,8 @@ import { faInfoCircle } from "@fortawesome/free-solid-svg-icons"
 const FormC = () => {
   let locationB = useLocation()
   let mode = locationB.state?.from["mode"] || "Client"
-  let companies = locationB.state?.from["data"]
-  // let mode = "Supplier"
+  let companies = locationB.state?.from["data"] || {}
+  const navigate = useNavigate()
   const var_data = GetVar()
   const [zones, setZones] = useState([])
   const [counties, setCounties] = useState([])
@@ -49,12 +49,12 @@ const FormC = () => {
   //Check Availability of Company Name
   const [show, setShow] =useState(false)
   const checkName = (name) => {
-    console.log("Onblur hit")
-    if(companies.some(n => n.nameC == name.trim())){
+    if(companies.some(n => n.nameC === name.trim())){
       setShow(true)
     }else{
       setShow(false)
-      setCompany(prev=>{return{...prev, nameC:name.trim()}})
+      //Updating the value of the company object
+      setCompany(prev=>{return{...prev, nameC:name}})
     }
 
   }
@@ -70,7 +70,7 @@ const FormC = () => {
     }
     
     fetchData()
-  }, [])
+  }, [var_data])
 
   useEffect(()=>{
     // console.log(company)
@@ -78,7 +78,9 @@ const FormC = () => {
 
   const handleSubmit = async(e)=>{
     e.preventDefault()
+    //Setting the mode depending on the mode i.e either supplier or client
     const link = {"Supplier":"/add_supplier", "Client":"/add_client"}
+    //posting the company object to the server
     const res = await fetch(link[`${mode}`],{
       method: "POST",
       headers: {
@@ -86,6 +88,18 @@ const FormC = () => {
     },
     body: JSON.stringify(company)
     })
+    const res_data = await res.json() || ""
+
+    if (res.status === 409){
+      console.log("Error 409")
+    } else if(res.status === 500) {
+        console.log('No Server Response')
+    } else {
+      //Clearing the input field
+      console.log(res_data)
+      setCompany(Company())
+      navigate(`/suppliers/${res_data["id"]}`, { state: { from: res_data }, replace: true })
+    }
   }
 
   

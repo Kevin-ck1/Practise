@@ -47,6 +47,7 @@ class Company(db.Model):
   email = db.Column(db.String(64))
   contact = db.Column(db.Integer)
   location = db.Column(db.String(64))
+  personnel = db.relationship('Person', backref='comapanyPersonnel', lazy=True)
   type = db.Column(db.String(50))
 
   __mapper_args__ = {
@@ -128,3 +129,24 @@ class Price(db.Model):
 
   def __repr__(self):
     return f"{self.id}: {self.price}"
+
+
+class Person(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  
+  name = db.Column(db.String(64))
+  contact = db.Column(db.Integer)
+  email = db.Column(db.Integer)
+  company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+  
+  def __repr__(self):
+    return f"{self.name}: {self.email}"
+
+#Defining Person Schema
+class PersonSchema(ma.Schema):
+  class Meta:
+    fields = ('id', "name", "email", "contact", "company_id")
+
+#Init Schema
+person_schema = PersonSchema()
+persons_schema = PersonSchema(many=True)

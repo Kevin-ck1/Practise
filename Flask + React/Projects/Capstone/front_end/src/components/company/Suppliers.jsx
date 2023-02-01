@@ -1,28 +1,33 @@
 import React from 'react'
 import { useState } from 'react'
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 
 const Suppliers = () => {
-    const [users, setUsers] = useState()
+    const [suppliers, setSuppliers] = useState()
+    const navigate = useNavigate()
 
     const fetchSuppliers = async()=>{
         const res = await fetch('/suppliers')
         const res_data = await res.json()
-        setUsers(res_data)
+        setSuppliers(res_data)
     }
 
     useEffect(() => {
         fetchSuppliers()
     }, [])
 
+    const openDetails = (supplier) => {
+        navigate(`/suppliers/${supplier.id}`, { state: { from:supplier }})
+    }
+
   return (
     <div className='container'>
         <div className="d-flex justify-content-between mr-2">
             <h1>Suppliers</h1>
             <h4 className="align-self-center" >
-                <Link  to="/companyform" state={{from: {"mode":"Supplier", "data":users}}} >+ Supplier</Link>
+                <Link  to="/companyform" state={{from: {"mode":"Supplier", "data":suppliers}}} >+ Supplier</Link>
             </h4>
         </div>
 
@@ -38,13 +43,13 @@ const Suppliers = () => {
             </thead>
             <tbody>
                 {
-                    users?.length && (
-                        users.map((user, i)=>(
-                            <tr key={i}>
+                    suppliers?.length && (
+                        suppliers.map((supplier, i)=>(
+                            <tr key={i} onClick={()=> openDetails(supplier)} >
                                 <td>{i+1}</td>
-                                <td>{user.nameC}</td>
-                                <td>{user.address}</td>
-                                <td>{user.location}</td>
+                                <td>{supplier.nameC}</td>
+                                <td>{supplier.address}</td>
+                                <td>{supplier.location}</td>
                             </tr> 
                         ))
                     ) 

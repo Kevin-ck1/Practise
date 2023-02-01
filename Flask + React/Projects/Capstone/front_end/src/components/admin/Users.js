@@ -5,7 +5,7 @@ import useRefreshToken from "../hooks/useRefreshToken";
 
 const Users = () => {
   const [users, setUsers] = useState('');
-  const {auth, setAuth} = useContext(AuthContext)
+  const {auth} = useContext(AuthContext)
   const usersRef = useRef("")
 
   const refresh = useRefreshToken();

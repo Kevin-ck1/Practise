@@ -177,7 +177,6 @@ def refresh():
 def add_supplier():
     if request.method == "POST":
         supplier_data = request.get_json()
-        print(supplier_data)
         supplier_data.pop("county")
         new_supplier = Supplier(**supplier_data)
         db.session.add(new_supplier)
@@ -195,6 +194,55 @@ def suppliers():
     suppliers = suppliers_schema.dump(query_data)
     
     return jsonify(suppliers)
+
+@main.route('/suppliers/<int:id>', methods=["GET", "POST", "PUT", "DELETE"])
+def supplierDetail(id):
+    supplier = Supplier.query.filter_by(id=id).first()
+    if request.method == "GET":
+        return supplier_schema.jsonify(supplier)
+        #return jsonify(())
+    elif request.method == "PUT":
+        supplier_data = request.get_json()
+        for key, value in supplier_data.items():
+            setattr(supplier, key, value)
+        db.session.commit()
+
+        return jsonify({'msg': "Supplier Details Updated"})
+    elif request.method == "DELETE":
+        print("Delete function trigger")
+        db.session.delete(supplier)
+        db.session.commit()
+        return jsonify({'msg': "Delete function trigger"})
+
+@main.route('/personnel/<int:id>', methods=["POST", "GET", "PUT", "DELETE"])
+def personnel(id):
+    company = Company.query.filter_by(id=id).first()
+    persons_query = Person.query.filter_by(company_id=id)
+    # persons_query = Person.query.with_parent(company)
+
+    if request.method == "GET":
+        persons = persons_schema.dump(persons_query)
+        print(persons)
+        return jsonify(persons)
+
+    elif request.method == "POST":
+        person_data = request.get_json()
+        person = Person(**person_data)
+        db.session.add(person)
+        db.session.commit()
+        return person_schema.jsonify(person)
+
+    elif request.method == "PUT":
+        # person = persons_query.filter_by(id=id).first()
+
+        return person_schema.jsonify(person)
+    elif request.method == "DELETE":
+        person = persons_query.filter_by(id=id).first()
+        db.session.delete(person)
+        db.session.commit()
+        return("hello")
+
+
 
 @main.route('/get_variables')
 def get_variables():

@@ -16,7 +16,7 @@ const useRefreshToken = () => {
             },
             
         })
-        if(res?.status != 200){
+        if(res?.status !== 200){
             navigate('/login', { state: { from: location }, replace: true });
             setAuth({})
             localStorage.clear()

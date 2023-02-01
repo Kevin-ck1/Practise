@@ -1,14 +1,27 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate 
 from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
+from sqlalchemy import MetaData
+
+# Setting up custom meta data and naming convenction for the database
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
 
 
 #Setting up a database object
-db = SQLAlchemy()
+db = SQLAlchemy(metadata=metadata)
 
 #Setting up a Marshmallow object
 ma = Marshmallow()
@@ -47,6 +60,9 @@ def create_app():
     #Initialiaze a database + Marshmellow 
     db.init_app(app)
     ma.init_app(app)
+    #Creating a migration instance
+    migrate = Migrate(app, db, render_as_batch=True)
+
     #Initialiazing decryption algorithm
     decrypt.init_app(app)
 
@@ -69,7 +85,7 @@ def create_app():
     app.register_blueprint(main, url_prefix="")
 
     #In this case to create the database we call it at the last instance
-    from .models import Movie #Importing the models to the project - Note that it should be called after the db instance
+    #from .models import Movie, Person #Importing the models to the project - Note that it should be called after the db instance
     
     with app.app_context():
         db.create_all()

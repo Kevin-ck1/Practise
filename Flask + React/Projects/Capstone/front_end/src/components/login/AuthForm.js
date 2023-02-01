@@ -13,7 +13,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AuthForm = () => {
     //To retrieve the global data and set it to a variable
-    const {auth, setAuth } = useContext(AuthContext)
+    const { setAuth } = useContext(AuthContext)
     const location = useLocation()
     const condition = location.pathname === '/login' 
     const navigate = useNavigate();

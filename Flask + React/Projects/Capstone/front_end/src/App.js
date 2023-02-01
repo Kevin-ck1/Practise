@@ -10,6 +10,7 @@ import Welcome from "./components/Welcome";
 import Admin from "./components/admin/Admin";
 import Suppliers from "./components/company/Suppliers";
 import FormC from "./components/company/FormC";
+import SupplierDetails from "./components/company/SupplierDetails";
 
 
 
@@ -24,6 +25,7 @@ function App() {
           <Route path="/register" element = {<Auth/>}/>
           <Route path="/unauthorized" element = {<Unauthorized/>}/>
           <Route path="/suppliers" element = {<Suppliers/>}/>
+          <Route path="/suppliers/:id" element = {<SupplierDetails/>}/>
           <Route path="/companyform" element = {<FormC/>}/>
           
           {/* Protected routes */}

@@ -1,5 +1,7 @@
 # Flask + React
 
+## Flask
+
 Installation - Flask
 
 First step is to create a virtual env
@@ -195,6 +197,64 @@ To check the contents of the database
 ` sqlite3 api/database.db`
 
 `sqlite> .tables`
+
+### Migrations
+
+To setup migrations, first we will have to install the package Flask-Migrate
+
+`pip install Flask-Migrate`
+
+Then we will have to configure the `__init__.py` file
+
+```python
+from flask_migrate import Migrate 
+
+#Inside the app below the db instance call a migrate
+migrate = Migrate(app, db)
+```
+
+To create the migration instance we will first have to direct Flask to our project folder
+
+`export FLASK_APP=api` & `export FLASK_ENV=development` -- This is for bash commands
+
+Check `https://flask.palletsprojects.com/en/2.0.x/tutorial/factory/#the-application-factory`
+
+Next to create a migration instance, run
+
+`flask db init`
+
+Now to create the first migration or to subsequent migrations
+
+`flask db migrate -m "Initial migration."`
+
+To apply changes to the database
+
+`flask db upgrade`
+
+Note that the error `ValueError: Constraint must have a name` might occur, this  can be rectified by setting up a naming convention for the data base
+
+```python
+from sqlalchemy import MetaData
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
+db = SQLAlchemy(app, metadata=metadata)
+```
+
+Check `https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/#using-custom-metadata-and-naming-conventions` and `https://stackoverflow.com/questions/62640576/flask-migrate-valueerror-constraint-must-have-a-name`
+
+
+
+
 
 **Note** to use print in flask we will do it as show below
 
