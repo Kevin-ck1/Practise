@@ -40,9 +40,9 @@ const FormC = () => {
 
   //Writing the onchange function
   const onInputChange = (e)=>{
-    const fN = Formatter(e)
-    setPhone(fN)
-    const phoneNumber = fN.trim().replace(/[^0-9]/g, "");
+    const pN = Formatter(e)
+    setPhone(pN)
+    const phoneNumber = pN.trim().replace(/[^0-9]/g, "");
     setCompany(prev=>{return{...prev, contact:phoneNumber}})   
   }
 

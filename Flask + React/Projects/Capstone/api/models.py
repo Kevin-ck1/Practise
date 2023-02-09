@@ -64,6 +64,7 @@ class Supplier(Company):
   __tablename__ = 'supplier'
   s_id = db.Column(db.Integer, db.ForeignKey('company.id'))
   zone = db.Column(db.Integer)
+  prices = db.relationship('Price', backref='supplierPrices', lazy=True)
 
   __mapper_args__ = {
         'polymorphic_identity': 'supplier',
@@ -110,25 +111,42 @@ clients_schema = ClientSchema(many=True)
 class Product(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   category = db.Column(db.Integer)
-  nameP = db.Column(db.String(64))
+  name = db.Column(db.String(64))
   brand = db.Column(db.String(64))
   size = db.Column(db.Integer)
   weight = db.Column(db.Integer)
   description = db.Column(db.Integer)
   prices = db.relationship('Price', backref='productPrices', lazy=True)
   
-  def __repr__(self):
-    return f"{self.nameP}: {self.brand}"
-    
+  # def __repr__(self):
+  #   return f"{self.name}: {self.brand}"
+
+#Defining Product Schema
+class ProductSchema(ma.Schema):
+  class Meta:
+    fields = ('id', "category", "name", "brand", "brand", "size", "weight", "description")
+
+#Init Schema
+product_schema = ProductSchema()
+products_schema = ProductSchema(many=True)  
 
 class Price(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   price = db.Column(db.Integer)
   product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-  # supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=False)
+  supplier_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
 
-  def __repr__(self):
-    return f"{self.id}: {self.price}"
+  # def __repr__(self):
+  #   return f"{self.id}: {self.price}"
+
+#Defining Price Schema
+class PriceSchema(ma.Schema):
+  class Meta:
+    fields = ('id', "price", "product_id", "supplier_id")
+
+#Init Schema
+price_schema = PriceSchema()
+prices_schema = PriceSchema(many=True)
 
 
 class Person(db.Model):

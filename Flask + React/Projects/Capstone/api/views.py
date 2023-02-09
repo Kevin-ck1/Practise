@@ -19,6 +19,7 @@ main = Blueprint("main", __name__, static_folder="static", template_folder="temp
 from flask_login import LoginManager
 login_manager = LoginManager()
 
+methods=["POST", "GET", "PUT", "DELETE"]
 
 # decorators
 def token_required(f):
@@ -197,10 +198,10 @@ def suppliers():
 
 @main.route('/suppliers/<int:id>', methods=["GET", "POST", "PUT", "DELETE"])
 def supplierDetail(id):
-    supplier = Supplier.query.filter_by(id=id).first()
+    supplier = Supplier.query.filter_by(id=id).first() 
     if request.method == "GET":
-        return supplier_schema.jsonify(supplier)
-        #return jsonify(())
+        return jsonify(supplier_schema.dump(supplier))
+        
     elif request.method == "PUT":
         supplier_data = request.get_json()
         for key, value in supplier_data.items():
@@ -219,30 +220,120 @@ def personnel(id):
     company = Company.query.filter_by(id=id).first()
     persons_query = Person.query.filter_by(company_id=id)
     # persons_query = Person.query.with_parent(company)
-
+    persons_query = company.personnel
     if request.method == "GET":
         persons = persons_schema.dump(persons_query)
-        print(persons)
+        # print(persons)
         return jsonify(persons)
 
+    #Retrieving and saving new person object
     elif request.method == "POST":
         person_data = request.get_json()
+        person_data["company_id"] = id
         person = Person(**person_data)
         db.session.add(person)
         db.session.commit()
-        return person_schema.jsonify(person)
+        return jsonify({"msg": "Person Saved"})
 
+    #Updating a person object
     elif request.method == "PUT":
-        # person = persons_query.filter_by(id=id).first()
+        person_data = request.get_json()
+        p_id = person_data["id"]
+        person = persons_query.filter_by(id=p_id).first() 
 
-        return person_schema.jsonify(person)
+        for key, value in person_data.items():
+            setattr(person, key, value)
+        db.session.commit()
+
+        # return person_schema.jsonify(person)
+        return jsonify({"msg": "Person Updated"})
+
     elif request.method == "DELETE":
-        person = persons_query.filter_by(id=id).first()
+        p_id = request.get_json()
+        person = persons_query.filter_by(id=p_id).first()
         db.session.delete(person)
         db.session.commit()
-        return("hello")
+        return jsonify({"msg": "Person Deleted"})
 
+@main.route("/products", methods=["POST", "GET", "PUT", "DELETE"])
+def products():
+    # Retrieving list of products from the database
+    if request.method == "GET":
+        products_query = Product.query.all()
+        products = products_schema.dump(products_query)
+        # prices_query = products_query[0].prices
+        # prices = prices_schema.dump(prices_query)
+        # send = {"products": products, "prices":prices}
 
+        return jsonify(products)
+
+    #Posting a new product to the database
+    elif request.method == "POST":
+        request_data = request.get_json()
+        price = request_data.pop("price")
+        s_id = request_data.pop("s_id")
+        #Creating new product item
+        product = Product(**request_data)
+
+        #Creating new price item
+        # price = Price(price=price, supplier_id=s_id, product_id=product.id)
+        price = Price(price=price, supplier_id=s_id)
+        product.prices.append(price)
+        db.session.add(product)
+        db.session.add(price)
+        db.session.commit()
+
+        return price_schema.jsonify(price)
+
+@main.route('/prices/<int:id>', methods = methods)
+def prices(id):
+    #The below line gives a single query object
+    result = Product.query.join(Price, Product.id == Price.product_id).filter(Price.supplier_id == id).all()
+    #The below code will give the results in form of a two query objects inside a tuple
+    result1 = db.session.query(Product, Price).join(Price).filter(Price.supplier_id == id)
+    #The below code will give the results in form of a two query objects inside a tuple
+    result2 = db.session.query(Product, Price).outerjoin(Price, Product.id == Price.product_id).filter(Price.supplier_id == id).all()  
+
+    #creating empty product list
+    products = []
+
+    # Converting the result to dictionary
+        # for p in result:
+        #     pd = product_schema.dump(p) | price_schema.dump(p.prices[0])
+        #     products.append(pd)
+        # print(products)
+        
+    # Converting result 2 to dictionary
+    for p, pr in result1.all():
+        dic = product_schema.dump(p) | price_schema.dump(pr)
+        products.append(dic)
+
+    if request.method == "GET":
+        return jsonify(products)
+    elif request.method == "PUT":
+        product_data = request.get_json()
+        price_id = product_data["id"]
+        price = Price.query.filter_by(id=price_id).first()
+
+        for key, value in product_data.items():
+            setattr(price, key, value)
+        db.session.commit()
+
+        return jsonify("Price Updated Successful")
+    # Deleting the price item
+    else:
+        price_id = request.get_json()
+        product_price =  result1.filter(Price.id == price_id).first()
+        price = product_price[1]
+        prices = product_price[0].prices
+        
+        #note price cannot be deleted if no other prices exist for the product
+        if len(prices)>1:
+            db.session.delete(price)
+            db.session.commit()
+            return jsonify("Delete")
+        else: 
+            return jsonify("Retain")
 
 @main.route('/get_variables')
 def get_variables():

@@ -6,6 +6,7 @@ import EditForm from './EditForm'
 import Personnel from './Personnel'
 
 
+
 const Intro = (props) => {
     const mode = props.mode
     const details = props.details
@@ -17,6 +18,18 @@ const Intro = (props) => {
     const [orgC, setOrgC] = useState({})
     const navigate = useNavigate()
 
+    //creating funtion to fromat the input value
+    const Formatter = (number) => {
+        //Removing white spaces(by use of trim) and removing the none numbers using the regex
+        const phoneNumber = number.trim().replace(/[^0-9]/g, "");
+        const len = phoneNumber.length
+        //Formating the number
+        //For the first three values
+        if (len < 4){return phoneNumber}
+        if (len < 7){return phoneNumber.replace(/(\d{3})(\d{1})/, "$1-$2");}
+        if(len < 10){return phoneNumber.replace(/(\d{3})(\d{3})(\d{1})/, "$1-$2-$3")}
+        return phoneNumber.replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3")
+    }
 
     useEffect(() => {
       //To set the zones values
@@ -62,7 +75,7 @@ const Intro = (props) => {
 
   return (
     // <div>Intro {props.mode}</div>
-    <div className="container">
+    <div>
         <div className="d-flex justify-content-between mt-4 pb-3">
             <div id="name">
                 <h2>
@@ -93,7 +106,7 @@ const Intro = (props) => {
                 </h5>
                 <h5 className="col-md-4 d-flex justify-content-start">
                     Contact: 
-                    <span className="text-info cContact mx-1">{company.contact}</span>
+                    <span className="text-info cContact mx-1">+254 {Formatter(String(company.contact))}</span>
                 </h5>
             </div>
 
@@ -117,8 +130,7 @@ const Intro = (props) => {
                 </h5>
             </div>  
         </div>
-        <Personnel c_id={company.id}></Personnel>
-        
+        <Personnel c_id={company.id} Formatter={Formatter}></Personnel>
     </div>
   )
 }
