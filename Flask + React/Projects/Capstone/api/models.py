@@ -100,7 +100,7 @@ class Client(Company):
 #Defining Client Schema
 class ClientSchema(ma.Schema):
   class Meta:
-    fields = ('id', "nameC", "email", "address")
+    fields = ('id', "nameC", "email", "address", "contact", "location", "county")
 
 #Init Schema
 client_schema = ClientSchema()
@@ -116,7 +116,7 @@ class Product(db.Model):
   size = db.Column(db.Integer)
   weight = db.Column(db.Integer)
   description = db.Column(db.Integer)
-  prices = db.relationship('Price', backref='productPrices', lazy=True)
+  prices = db.relationship('Price', backref='productPrices', lazy="dynamic")
   
   # def __repr__(self):
   #   return f"{self.name}: {self.brand}"

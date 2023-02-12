@@ -34,7 +34,8 @@ const Personnel = ({c_id, Formatter}) => {
 
     useEffect(()=>{
         const checkPerson = () =>{
-            const state = Object.values(person).every(el => el !== undefined)  
+            //Check if all the key in the person object are filled
+            const state = Object.values(person).every(el => el !== undefined && el !== "")  
             setSubmitP(state)
         }
         checkPerson()

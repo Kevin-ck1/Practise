@@ -189,12 +189,22 @@ def add_supplier():
         zones = util.get_zones()
         return jsonify({ "zones": zones })
 
-@main.route('/suppliers', methods=["GET"])
+@main.route('/suppliers', methods=["GET", "POST"])
 def suppliers():
-    query_data = Supplier.query.all()
-    suppliers = suppliers_schema.dump(query_data)
-    
-    return jsonify(suppliers)
+    if request.method == "GET":
+        query_data = Supplier.query.all()
+        suppliers = suppliers_schema.dump(query_data)
+        
+        return jsonify(suppliers)
+    else:
+        supplier_data = request.get_json()
+        supplier_data.pop("county")
+        new_supplier = Supplier(**supplier_data)
+        db.session.add(new_supplier)
+        db.session.commit()
+        print(new_supplier)
+
+        return supplier_schema.jsonify(new_supplier)
 
 @main.route('/suppliers/<int:id>', methods=["GET", "POST", "PUT", "DELETE"])
 def supplierDetail(id):
@@ -210,10 +220,42 @@ def supplierDetail(id):
 
         return jsonify({'msg': "Supplier Details Updated"})
     elif request.method == "DELETE":
-        print("Delete function trigger")
         db.session.delete(supplier)
         db.session.commit()
         return jsonify({'msg': "Delete function trigger"})
+
+@main.route('/clients', methods=methods)
+def clients():
+    if request.method == "GET":
+        query_clients = Client.query.all()
+        clients =clients_schema.dump(query_clients)
+        return jsonify(clients)
+
+    elif request.method == "POST":
+        client_data = request.get_json()
+        client_data.pop("zone")
+        new_client = Client(**client_data)
+        db.session.add(new_client)
+        db.session.commit()
+        return client_schema.jsonify(new_client)
+
+@main.route('/clients/<int:id>', methods=methods)
+def clientDetail(id):
+    client = Client.query.filter_by(id=id).first()
+    if request.method == "GET":
+        return client_schema.jsonify(client)
+
+    elif request.method == "PUT":
+        client_data = request.get_json()
+        for key, value in client_data.items():
+            setattr(client, key, value)
+        db.session.commit()
+        return jsonify({'msg': "Client Details Updated"})
+        
+    elif request.method == "DELETE":
+        db.session.delete(client)
+        db.session.commit()
+        return jsonify({'msg': "Delete function triggered"})
 
 @main.route('/personnel/<int:id>', methods=["POST", "GET", "PUT", "DELETE"])
 def personnel(id):
@@ -257,21 +299,25 @@ def personnel(id):
 
 @main.route("/products", methods=["POST", "GET", "PUT", "DELETE"])
 def products():
+    # print(request.get_json())
     # Retrieving list of products from the database
     if request.method == "GET":
         products_query = Product.query.all()
-        products = products_schema.dump(products_query)
-        # prices_query = products_query[0].prices
-        # prices = prices_schema.dump(prices_query)
-        # send = {"products": products, "prices":prices}
+        # products = products_schema.dump(products_query)
+        products = []
+        for product in products_query:
+            price = product.prices.order_by(Price.price.desc()).first()
+            p = product_schema.dump(product) | price_schema.dump(price)
+            products.append(p)
 
         return jsonify(products)
 
     #Posting a new product to the database
     elif request.method == "POST":
+        print(request.get_json())
         request_data = request.get_json()
         price = request_data.pop("price")
-        s_id = request_data.pop("s_id")
+        s_id = request_data.pop("supplier")
         #Creating new product item
         product = Product(**request_data)
 
@@ -281,9 +327,15 @@ def products():
         product.prices.append(price)
         db.session.add(product)
         db.session.add(price)
-        db.session.commit()
+        # db.session.commit()
 
-        return price_schema.jsonify(price)
+        return jsonify("Product Added")
+
+@main.route('/products/<int:id>', methods=methods)
+def productDetails(id):
+    product = Product.query.filter_by(id=id).first()
+    if request.method == "GET":
+        return product_schema.jsonify(product)
 
 @main.route('/prices/<int:id>', methods = methods)
 def prices(id):
@@ -334,6 +386,7 @@ def prices(id):
             return jsonify("Delete")
         else: 
             return jsonify("Retain")
+    
 
 @main.route('/get_variables')
 def get_variables():

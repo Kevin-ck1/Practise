@@ -70,16 +70,17 @@ const FormC = () => {
     }
     
     fetchData()
-  }, [var_data])
+  }, [])
 
   useEffect(()=>{
     // console.log(company)
-  }, [company])
+    // console.log(counties)
+  }, [counties])
 
   const handleSubmit = async(e)=>{
     e.preventDefault()
     //Setting the mode depending on the mode i.e either supplier or client
-    const link = {"Supplier":"/add_supplier", "Client":"/add_client"}
+    const link = {"Supplier":"/suppliers", "Client":"/clients"}
     //posting the company object to the server
     const res = await fetch(link[`${mode}`],{
       method: "POST",
@@ -98,7 +99,7 @@ const FormC = () => {
       //Clearing the input field
       console.log(res_data)
       setCompany(Company())
-      navigate(`/suppliers/${res_data["id"]}`, { state: { from: res_data }, replace: true })
+      navigate(`/${link[mode]}/${res_data["id"]}`, { state: { from: res_data }, replace: true })
     }
   }
 
@@ -207,14 +208,15 @@ const FormC = () => {
               <label htmlFor="county" className="col-sm-2 col-form-label">County</label>
               <div className="col-sm-5">
                 <select onChange={(e)=> setCompany(prev=>{return{...prev, county:parseInt(e.target.value)}})}  id="county" className="form-control">
+                  <option value={0} disabled>Select County</option>
                   {
                     counties.map((county, i)=>{
-                      return (<option key={i} value={i}>{{county}}</option>)
+                      return (<option key={i} value={i+1}>{county}</option>)
                     })
                   }
                 </select>
               </div>
-          </div>
+            </div>
           )
         }
         <div className="form-group row mt-3">

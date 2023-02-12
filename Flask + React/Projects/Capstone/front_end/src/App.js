@@ -8,10 +8,12 @@ import Products from "./components/products/Products";
 import Unauthorized from "./components/Unauthorized";
 import Welcome from "./components/Welcome";
 import Admin from "./components/admin/Admin";
-import Suppliers from "./components/company/Suppliers";
+import Suppliers from "./components/company/Suppliers1";
 import FormC from "./components/company/FormC";
 import SupplierDetails from "./components/company/SupplierDetails";
-
+import Clients from "./components/company/Clients";
+import ClientDetails from "./components/company/ClientDetails";
+import ProductDetails from "./components/products/ProductDetails";
 
 
 function App() {
@@ -26,7 +28,10 @@ function App() {
           <Route path="/unauthorized" element = {<Unauthorized/>}/>
           <Route path="/suppliers" element = {<Suppliers/>}/>
           <Route path="/suppliers/:id" element = {<SupplierDetails/>}/>
+          <Route path="/clients" element = {<Clients/>}/>
+          <Route path="/clients/:id" element = {<ClientDetails/>}/>
           <Route path="/companyform" element = {<FormC/>}/>
+          <Route path="/products/:id" element = {<ProductDetails/>}/>
           
           {/* Protected routes */}
           <Route element={<RequireAuth allowedRoles = {[2001, 1984]}/>} >

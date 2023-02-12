@@ -192,7 +192,7 @@ const EditForm = ({company, setCompany, mode,  zones, counties, onClose}) => {
                 {counties && (<option value={company.county} >{counties[`${parseInt(company.county) -1}`]}</option>)}
                   {
                     counties && counties.map((county, i)=>{
-                      return (<option key={i} value={i}>{{county}}</option>)
+                      return (<option key={i} value={i+1}>{county}</option>)
                     })
                   }
                 </select>
