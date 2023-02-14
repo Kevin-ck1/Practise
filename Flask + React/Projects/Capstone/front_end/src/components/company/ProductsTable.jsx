@@ -6,11 +6,20 @@ const ProductsTable = ({c_id, productPrices}) => {
     
     const [products, setProducts] = useState([])
     const [editRow, setEditRow] = useState("")
+    const [categories, setCategories] = useState([])
+
+    const fetchVariables = async()=>{
+        const res = await fetch('/get_variables')
+        const res_data = await res.json()
+        setCategories(res_data["Categories"])
+    }
 
     useEffect(()=>{
         if(productPrices.length > 0){
             setProducts(productPrices)
         }
+
+        fetchVariables()
     },[productPrices])
 
     const closeEdit = () =>{
@@ -84,6 +93,7 @@ const ProductsTable = ({c_id, productPrices}) => {
                                         product = {product}
                                         setEditRow = {setEditRow}
                                         deletePrice = {deletePrice}
+                                        categories = {categories}
                                     />   
                                 )
                             }else{
@@ -94,6 +104,7 @@ const ProductsTable = ({c_id, productPrices}) => {
                                         product = {product}
                                         saveEdit = {saveEdit}
                                         closeEdit = {closeEdit}
+                                        categories = {categories}
                                     />
                                 )
                             }

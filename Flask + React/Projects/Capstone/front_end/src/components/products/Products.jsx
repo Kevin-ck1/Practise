@@ -18,6 +18,8 @@ const Products = () => {
   const [submitP, setSubmitP] = useState(false)
   const [error, setError] = useState(false)
   const [error1, setError1] = useState(false)
+  const [similarProduct, setSimilarProduct] = useState(Product())
+  const [searchName, setSearchedName] = useState("")
   const navigate = useNavigate()
 
   useEffect(()=>{
@@ -47,8 +49,10 @@ const Products = () => {
       if(p.name === product.name && p.brand === product.brand){
         setError1(true)
         setSubmitP(false)
+        setSimilarProduct(p)
       } else{
         setError1(false)
+        setSimilarProduct(Product())
       }
     })
     //To check that the values for the product object are filled
@@ -56,8 +60,14 @@ const Products = () => {
 
   },[product])
 
+  const filterProducts = (name)=>{
+    if(name.toUpperCase().indexOf(searchName.toUpperCase()) > -1 && searchName !== ""){
+      return true
+    }else{
+      return false
+    }
+  }
   
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     if(submitP){
@@ -100,7 +110,7 @@ const Products = () => {
   }
   const errorBlock = {
     display: error ? "block" : "none" ,
-    fontSize: '0.75rem',
+    // fontSize: '0.75rem',
     borderRadius: "0.5rem",
     background: "#888888",
     color: "#fff",
@@ -166,7 +176,7 @@ const Products = () => {
           <div className="pt-2" >
             <p style={{...errorBlock, ...{display : error1 ? "block" : "none"}}}>
               <FontAwesomeIcon icon={faInfoCircle} />
-              Product Already Exist, Check <Link></Link> to edit the product
+              Product Already Exist, Check <Link to={`/products/${similarProduct.id}`}>{similarProduct.name}</Link> to edit the product
             </p>
           </div>
           
@@ -237,8 +247,30 @@ const Products = () => {
         </form>
       </div>
 
-      <div className="filterProduct row form-group mx-1 mb-4 pt-2 col-md-6">
-        <input className="filterInput form-control border-primary" type="text" placeholder="Search Products"/>
+      <div className="row form-group mx-1 mb-4 pt-2 col-md-6">
+        <input 
+          className="form-control border-primary" 
+          type="text" 
+          placeholder="Search Products"
+          onChange={(e)=>setSearchedName(e.target.value)}
+        />
+        
+        <table className="table table-striped table-hover table-bordered border-primary" >
+          <tbody>
+            {
+              products.length >= 1 && products.map((product, i)=>{
+                return(
+                  <tr 
+                    key={i} 
+                    style={{display: filterProducts(product.name) ? "" : "none"}} 
+                    onClick={()=> openDetails(product)}
+                  ><td>{product.name}</td></tr>
+                  )
+  
+              })
+            }
+          </tbody>
+        </table>
       </div>
       <div className="rounded mt-2 pt-2">
         <table className="table table-striped table-hover table-bordered border-primary pt-2">

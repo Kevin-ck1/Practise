@@ -3,12 +3,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 
 
-const ProductRow = ({i, product, setEditRow, deletePrice}) => {
+const ProductRow = ({i, product, setEditRow, deletePrice, categories}) => {
   return (
     <tr>
         <th scope='row'>{i+1}</th>
         <td>{product.name}: {product.brand}</td>
-        <td>{product.category}</td>
+        <td>{categories[product.category - 1]}</td>
         <td>{product.price}</td>
         <td>
             <button className="pr-1 btn btn-lg text-dark" onClick={()=>setEditRow(product.id)}>

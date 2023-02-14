@@ -210,7 +210,7 @@ def suppliers():
 def supplierDetail(id):
     supplier = Supplier.query.filter_by(id=id).first() 
     if request.method == "GET":
-        return jsonify(supplier_schema.dump(supplier))
+        jsonify(supplier_schema.dump(supplier))
         
     elif request.method == "PUT":
         supplier_data = request.get_json()
@@ -327,15 +327,32 @@ def products():
         product.prices.append(price)
         db.session.add(product)
         db.session.add(price)
-        # db.session.commit()
+        db.session.commit()
 
         return jsonify("Product Added")
 
 @main.route('/products/<int:id>', methods=methods)
 def productDetails(id):
     product = Product.query.filter_by(id=id).first()
+    price = product.prices
     if request.method == "GET":
-        return product_schema.jsonify(product)
+        p = product_schema.dump(product)
+        pr = prices_schema.dump(price)
+
+        return jsonify({"product":p, "prices":pr})
+
+    elif request.method == "PUT":
+        request_data = request.get_json()
+        for key, value in request_data.items():
+            setattr(product, key, value)
+        db.session.commit()
+        return jsonify(request_data)
+
+    elif request.method  == "DELETE":
+        db.session.delete(product)
+        db.session.commit()
+        #incase of session.query().filter().delete() -- on the parent and child model use "passive_deletes" $ "ondelete"
+        return jsonify({"msg": "Product Deleted"})
 
 @main.route('/prices/<int:id>', methods = methods)
 def prices(id):
@@ -362,6 +379,21 @@ def prices(id):
 
     if request.method == "GET":
         return jsonify(products)
+    elif request.method == "POST":
+        request_data = request.get_json()
+        print(request_data)
+        product = Product.query.filter_by()
+        supplier = Supplier.query.filter_by()
+        price = Price(**request_data)
+        # price = Price(price=price, supplier_id=data, product_id=product.id)
+        # price = Price(price=price, supplier_id=s_id)
+        # product.prices.append(price)
+        # db.session.add(product)
+        print(price)
+        db.session.add(price)
+        db.session.commit()
+        return price_schema.jsonify(price)
+
     elif request.method == "PUT":
         product_data = request.get_json()
         price_id = product_data["id"]
@@ -377,8 +409,8 @@ def prices(id):
         price_id = request.get_json()
         product_price =  result1.filter(Price.id == price_id).first()
         price = product_price[1]
-        prices = product_price[0].prices
-        
+        prices = product_price[0].prices.all()
+
         #note price cannot be deleted if no other prices exist for the product
         if len(prices)>1:
             db.session.delete(price)

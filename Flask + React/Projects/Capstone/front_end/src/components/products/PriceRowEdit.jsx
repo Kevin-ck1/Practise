@@ -3,31 +3,30 @@ import { faCheck, faBan,  } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 
-const ProductRowEdit = ({i, product, saveEdit, closeEdit, categories}) => {
+const PriceRowEdit = ({i, price, saveEdit, closeEdit,supplier}) => {
     const [p, setP] = useState({})
 
     useEffect(()=>{
-        setP(product)
+        setP(price)
     },[])
 
 
   return (
     <tr>
         <th scope='row'>{i+1}</th>
-        <td>{product.name}: {product.brand}</td>
-        <td>{categories[product.category - 1]}</td>
+        <td>{supplier.nameC}</td>
         <td>
             <input 
                 type="text" 
                 className="form-control" 
                 onChange={(e)=>setP(prev=>{return{...prev, price:e.target.value}})}
                 required
-                defaultValue={product.price}
+                defaultValue={price.price}
             />
         </td>
         
         <td>
-            <button className="pr-1 btn btn-lg text-dark" onClick={()=>saveEdit(p)}>
+            <button className="pr-1 btn btn-lg text-dark" onClick={()=>saveEdit(p, price.supplier_id)}>
                 <FontAwesomeIcon icon={faCheck}/>
             </button>
             <button className="pr-0 btn btn-lg text-dark" onClick={()=>closeEdit()}>
@@ -38,4 +37,4 @@ const ProductRowEdit = ({i, product, saveEdit, closeEdit, categories}) => {
   )
 }
 
-export default ProductRowEdit
+export default PriceRowEdit

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useLocation, useParams } from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import Intro from "./Intro"
 
 const ClientDetails = () =>{
@@ -7,9 +7,9 @@ const ClientDetails = () =>{
     const location = useLocation()
     let data = location.state?.from 
     const [client, setClient] = useState({})
+    const navigate = useNavigate()
 
     useEffect(()=>{
-        console.log(data)
         if(data){
             setClient(data)
         }else{
@@ -17,7 +17,11 @@ const ClientDetails = () =>{
                 const res = await fetch(`/clients/${id}`)
                 const res_data = await res.json()
                 
-                setClient(res_data)
+                if(res.status === 200 && Object.keys(res_data).length !== 0){
+                    setClient(res_data)
+                }else{
+                    navigate('/clients')
+                }
             }
 
             fetchClient()

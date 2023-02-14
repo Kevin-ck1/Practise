@@ -47,7 +47,7 @@ class Company(db.Model):
   email = db.Column(db.String(64))
   contact = db.Column(db.Integer)
   location = db.Column(db.String(64))
-  personnel = db.relationship('Person', backref='comapanyPersonnel', lazy=True)
+  personnel = db.relationship('Person', backref='comapanyPersonnel', lazy=True, cascade="all, delete")
   type = db.Column(db.String(50))
 
   __mapper_args__ = {
@@ -64,7 +64,7 @@ class Supplier(Company):
   __tablename__ = 'supplier'
   s_id = db.Column(db.Integer, db.ForeignKey('company.id'))
   zone = db.Column(db.Integer)
-  prices = db.relationship('Price', backref='supplierPrices', lazy=True)
+  prices = db.relationship('Price', backref='supplierPrices', lazy=True, cascade="all, delete")
 
   __mapper_args__ = {
         'polymorphic_identity': 'supplier',
@@ -116,7 +116,7 @@ class Product(db.Model):
   size = db.Column(db.Integer)
   weight = db.Column(db.Integer)
   description = db.Column(db.Integer)
-  prices = db.relationship('Price', backref='productPrices', lazy="dynamic")
+  prices = db.relationship('Price', backref='productPrices', lazy="dynamic", cascade="all, delete")
   
   # def __repr__(self):
   #   return f"{self.name}: {self.brand}"
