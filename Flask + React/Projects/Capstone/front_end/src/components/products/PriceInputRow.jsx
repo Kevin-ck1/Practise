@@ -10,11 +10,7 @@ const PriceInputRow = ({closeInput, suppliers, handleSubmit, sList}) => {
     const [displayList, setDislayList] = useState()
 
     const checkSList = (id) =>{
-        if(sList.includes(id)){
-            return true
-        }else{
-            return false
-        }
+        return (sList.includes(id))
     }
 
   return (

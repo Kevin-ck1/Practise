@@ -1,14 +1,20 @@
+import { useState } from "react"
+
 
 const GetVar = () => {
+  const [data, setData] = useState({})
+
   const fetchData = async()=>{
     const res = await fetch('/get_variables')
 
     const varData = await res.json()
 
-    return varData;
+    return setData(varData);
   }
 
-  return fetchData
+  fetchData()
+
+  return data
 }
 
 export default GetVar

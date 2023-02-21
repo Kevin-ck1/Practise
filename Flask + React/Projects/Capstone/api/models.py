@@ -88,6 +88,7 @@ class Client(Company):
   __tablename__ = 'client'
   c_id = db.Column(db.Integer, db.ForeignKey('company.id'))
   county = db.Column(db.Integer)
+  jobs = db.relationship('Job', backref='supplierPrices', lazy="dynamic", cascade="all, delete")
   
   __mapper_args__ = {
         'polymorphic_identity': 'client',
@@ -117,7 +118,8 @@ class Product(db.Model):
   weight = db.Column(db.Integer)
   description = db.Column(db.Integer)
   prices = db.relationship('Price', backref='productPrices', lazy="dynamic", cascade="all, delete")
-  
+  supplies = db.relationship('Supply', backref='productSupplys', lazy="dynamic", cascade="all, delete")
+
   # def __repr__(self):
   #   return f"{self.name}: {self.brand}"
 
@@ -168,3 +170,53 @@ class PersonSchema(ma.Schema):
 #Init Schema
 person_schema = PersonSchema()
 persons_schema = PersonSchema(many=True)
+
+class Job(db.Model):
+  id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+  code = db.Column(db.String(64))
+  value = db.Column(db.Integer, nullable=True)
+  status = db.Column(db.String(64), default = "RFQ")
+  lpo = db.Column(db.String(64), nullable=True)
+  cheque = db.Column(db.String(64), nullable=True)
+  client_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+  supplies = db.relationship('Supply', backref='supplys', lazy="dynamic", cascade="all, delete")
+  notes = db.relationship('Note', backref='jobNotes', lazy="dynamic", cascade="all, delete")
+
+  def __repr__(self):
+    return f"{self.code} : {self.value}"
+
+class JobSchema(ma.Schema):
+  class Meta:
+    fields = ("id", "code", "value", "status", "lpo", "cheque", "client_id")
+
+job_schema = JobSchema()
+jobs_schema = JobSchema(many=True)
+
+class Supply(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  qty = db.Column(db.Integer)
+  price = db.Column(db.Integer)
+  minBuying = db.Column(db.Integer, db.ForeignKey('price.id'), nullable=False)
+  maxBuying = db.Column(db.Integer, db.ForeignKey('price.id'), nullable=False)
+  total = db.Column(db.Integer)
+  product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+  job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+
+class SupplySchema(ma.Schema):
+  class Meta:
+    fields = ("id", "qty", "price", "minBuying", "maxBuying", "total", "product_id", "job_id" )
+
+supply_schema = SupplySchema()
+supplies_schema = SupplySchema(many=True)
+
+
+class Note(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  deliveryNo = db.Column(db.String(64), nullable=False)
+  invoiceNo = db.Column(db.String(64), nullable=False)
+  receiptNo = db.Column(db.String(64), nullable=False)
+  job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+
+class NoteSchema(ma.Schema):
+  class Meta: 
+    fields = ("id", "deliveryNo", "invoiceNo", "receiptNo", "job_id" )

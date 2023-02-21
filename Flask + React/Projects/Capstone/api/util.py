@@ -1,4 +1,7 @@
 import pandas as pd 
+from sqlalchemy.sql import func
+from . import db
+from .models import *
 
 #Not in use for now
 def get_zones():
@@ -39,3 +42,21 @@ def get_county():
     df = pd.read_excel('api/static/data.xlsx', sheet_name= "Counties")
     a = df.to_dict('records')
     return a
+
+def updateJobValue(id):
+    # job_query = Job.query.filter_by(id = id)
+    supplies = Supply.query.filter_by(job_id = id)
+    # print(supplies)
+    # value = db.select(db.func.sum(supplies.total))
+    sum_query = db.select(db.func.sum(Supply.total)).where(Supply.job_id == id)
+    value = db.engine.execute(sum_query).first()[0]
+    # print(value)
+    # print(job_schema.dump(job_query))
+    # job_query = Job.query.filter_by(id = id).first()
+    # job_query.value = value
+    # db.session.commit()
+    # print(job_schema.dump(job_query))
+
+    return value
+
+    # query = db.select([db.func.sum(payment_table.c.amount)])

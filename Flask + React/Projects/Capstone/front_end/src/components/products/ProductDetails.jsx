@@ -25,11 +25,6 @@ const ProductDetails = () => {
         }else{
             navigate(`/products`)
         }
-        
-        
-        
-
-        
     }
 
     const fetchPrice = async()=>{

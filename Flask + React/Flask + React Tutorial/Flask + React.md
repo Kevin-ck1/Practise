@@ -252,6 +252,12 @@ db = SQLAlchemy(app, metadata=metadata)
 
 Check `https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/#using-custom-metadata-and-naming-conventions` and `https://stackoverflow.com/questions/62640576/flask-migrate-valueerror-constraint-must-have-a-name`
 
+#### Error
+
+Incase of the below error, you can delete the table or the whole database
+
+`sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: job.id on a table with nullable values`
+
 
 
 

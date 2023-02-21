@@ -14,6 +14,7 @@ import SupplierDetails from "./components/company/SupplierDetails";
 import Clients from "./components/company/Clients";
 import ClientDetails from "./components/company/ClientDetails";
 import ProductDetails from "./components/products/ProductDetails";
+import JobDetails from "./components/jobs/jobDetails/JobDetails";
 
 
 function App() {
@@ -32,7 +33,8 @@ function App() {
           <Route path="/clients/:id" element = {<ClientDetails/>}/>
           <Route path="/companyform" element = {<FormC/>}/>
           <Route path="/products/:id" element = {<ProductDetails/>}/>
-          
+          <Route path="/jobs/:id" element={<JobDetails/>} />
+
           {/* Protected routes */}
           <Route element={<RequireAuth allowedRoles = {[2001, 1984]}/>} >
             <Route path="/products" element={<Products/>} />

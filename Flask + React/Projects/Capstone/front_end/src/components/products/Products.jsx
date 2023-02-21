@@ -6,10 +6,10 @@ import { Product } from "../hooks/ProductObject"
 import useFetch from "../hooks/useFetch"
 
 const Products = () => {
-  const [catgories, setCategories] = useState([])
+  const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [products, setProducts] = useState([])
-  const data = useFetch('/get_variables')
+  const data = useFetch('/get_variables') || []
   const fetchSuppliers = useFetch('/suppliers')
   const fetchProducts = useFetch('/products')
   const [isHover, setIsHover] = useState(false)
@@ -22,10 +22,17 @@ const Products = () => {
   const [searchName, setSearchedName] = useState("")
   const navigate = useNavigate()
 
+  const fetchVariables = async() => {
+    const res = await fetch('/get_variables')
+    const res_data = await res.json()
+
+    setCategories(res_data.Categories)
+  }
+
   useEffect(()=>{
     //To set the categories value
-    setCategories(data["Categories"])
-  },[data])
+    fetchVariables()
+  },[])
 
   useEffect(()=>{
     //To set the suppliers dropdown values
@@ -45,7 +52,7 @@ const Products = () => {
 
   useEffect(()=>{
     //Checking if a similar Product exists
-    products.map((p)=>{
+    products.forEach((p)=>{
       if(p.name === product.name && p.brand === product.brand){
         setError1(true)
         setSubmitP(false)
@@ -61,11 +68,7 @@ const Products = () => {
   },[product])
 
   const filterProducts = (name)=>{
-    if(name.toUpperCase().indexOf(searchName.toUpperCase()) > -1 && searchName !== ""){
-      return true
-    }else{
-      return false
-    }
+    return(name.toUpperCase().indexOf(searchName.toUpperCase()) > -1 && searchName !== "")
   }
   
   const handleSubmit = async (e) => {
@@ -123,6 +126,7 @@ const Products = () => {
 
   return (
     <div className="container">
+      {/* intro */}
       <div className="d-flex justify-content-between mr-2">
         <h1>Products</h1>
         <h4 
@@ -135,6 +139,7 @@ const Products = () => {
         </h4>
         
       </div>
+      {/* Input Form */}
       <div className="p-3 card" style={{display: show ? "block" : "none" }}>
         <form>
           <div className="row">
@@ -160,10 +165,10 @@ const Products = () => {
             </div>
             <div className="from-group col-md-4">
               <label htmlFor="">Category</label>
-              <select className="form-control" onChange={(e)=>setProduct(prev=>{return{...prev, category:parseInt(e.target.value)}})}>
-              <option disabled selected>Select Category</option>
+              <select className="form-control" defaultValue={"Default"} onChange={(e)=>setProduct(prev=>{return{...prev, category:parseInt(e.target.value)}})}>
+              <option disabled value={"Default"}>Select Category</option>
                 {
-                  catgories && catgories.map((category, i)=>{
+                  categories.length > 0 && categories.map((category, i)=>{
                     return(
                       <option key={i} value={i+1}>{category}</option>
                     )
@@ -192,8 +197,8 @@ const Products = () => {
             </div>
             <div className="from-group col-md-4">
               <label htmlFor="" className="justify-content-start">Supplier</label>
-              <select className="form-control" onChange={(e)=>setProduct(prev=>{return{...prev, supplier:parseInt(e.target.value)}})}>
-                <option style={{color:"grey"}} disabled selected>Select Supplier</option>
+              <select className="form-control" defaultValue={"Default"} onChange={(e)=>setProduct(prev=>{return{...prev, supplier:parseInt(e.target.value)}})}>
+                <option style={{color:"grey"}} disabled value={"Default"}>Select Supplier</option>
               {
                 suppliers.length >= 1 && suppliers.map((supplier, i)=>{
                   return(
@@ -247,6 +252,7 @@ const Products = () => {
         </form>
       </div>
 
+      {/* Search Filter */}
       <div className="row form-group mx-1 mb-4 pt-2 col-md-6">
         <input 
           className="form-control border-primary" 
@@ -272,6 +278,8 @@ const Products = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Products Table */}
       <div className="rounded mt-2 pt-2">
         <table className="table table-striped table-hover table-bordered border-primary pt-2">
           <thead>
@@ -292,7 +300,7 @@ const Products = () => {
                     <td>{i+1}</td>
                     <td>{product.name} : {product.brand}</td>
                     <td>{product.name}</td>
-                    <td>{product.category}</td>
+                    <td>{categories[product.category - 1]}</td>
                     <td>{product.price}</td>
                   </tr>
                 )

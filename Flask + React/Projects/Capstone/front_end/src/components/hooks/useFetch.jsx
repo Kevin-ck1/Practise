@@ -15,8 +15,8 @@ const useFetch = (url) => {
         }
     }
     fetchData()
-  }, [url])
-  console.log(error || "Data Fetch Successfull")
+  }, [])
+
   return data 
 }
 

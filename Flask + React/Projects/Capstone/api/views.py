@@ -1,11 +1,12 @@
-from flask import Blueprint, render_template,  jsonify, request, json, make_response, current_app as app
+from flask import Blueprint, render_template,  jsonify, request, json, make_response, send_file, current_app as app
 from . import db, decrypt, util
 from .models import *
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps 
-import jwt
-import datetime
+import jwt, csv, datetime
+# import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required #use of flask-jwt-extended
+import pandas as pd
 
 
 #For print functions
@@ -210,7 +211,7 @@ def suppliers():
 def supplierDetail(id):
     supplier = Supplier.query.filter_by(id=id).first() 
     if request.method == "GET":
-        jsonify(supplier_schema.dump(supplier))
+        return jsonify(supplier_schema.dump(supplier))
         
     elif request.method == "PUT":
         supplier_data = request.get_json()
@@ -419,11 +420,192 @@ def prices(id):
         else: 
             return jsonify("Retain")
     
+@main.route('/jobs', methods=methods)
+def jobs():
+    if request.method == "GET":
+        query_jobs = Job.query.all()
+        jobs = jobs_schema.dump(query_jobs)
+        return jsonify(jobs)
+
+    elif request.method == "POST":
+        # Job.__table__.drop(db.engine) --To drob a table
+        print(request)
+        request_data = request.get_json()
+        print(request_data)
+        # job = Job(**request_data)
+        job = Job(code = request_data["code"], client_id = request_data["client_id"])
+        # job = Job(code = request_data["code"], client_id = request_data["client_id"], value=0, lpo=0, cheque=0)
+        print(job)
+        db.session.add(job)
+        db.session.commit()
+        return job_schema.jsonify(job)
+
+@main.route('/jobs/<int:id>', methods=methods)
+def jobDedatils(id):
+    job_query = Job.query.filter_by(id=id).first()
+    # supplies_query = job_query.supplies
+
+    #Querying for the Supply and Product
+    ps_query = db.session.query(Product, Supply).join(Supply).filter(Supply.job_id == id)
+    supplies = []
+    #Merging the Supplies & Products
+    for p, s in ps_query.all():
+        dic = product_schema.dump(p) | supply_schema.dump(s)
+        supplies.append(dic)
+
+    if request.method == "GET":
+        if(job_query):
+            job = job_schema.dump(job_query)
+            return jsonify({"msg":"Valid Job Id", "job":job, "supplies":supplies})
+        else:
+            return jsonify({"msg":"Invalid"})
+    elif request.method == "POST":
+        request_data = request.get_json()
+        # request_data.pop("id")
+        # product = Product.query.filter_by(id = request_data["product_id"])
+        # minBuying = product.prices.order_by(Price.price.asc()).first()
+        prices = Price.query.filter_by(product_id=request_data["product_id"])
+        minBuying = prices.order_by(Price.price.asc()).first()
+        supply = Supply(
+            qty = request_data["qty"],
+            price = request_data["price"],
+            minBuying = minBuying.id,
+            maxBuying = request_data["maxBuying"],
+            total = request_data["total"],
+            product_id = request_data["product_id"],
+            job_id = id,
+        )
+        
+        db.session.add(supply)
+        db.session.commit()
+        job_value = util.updateJobValue(id)
+        job_query = Job.query.filter_by(id = id).first()
+        job_query.value = job_value
+        db.session.commit()
+
+
+
+
+        return  jsonify(job_query.value)
+    elif request.method == "PUT":
+        request_data = request.get_json()
+        for key, value in request_data.items():
+            if key == "lpo" or key == "cheque":
+                setattr(job_query, key, int(value))
+            else:
+                setattr(job_query, key, value)
+        db.session.commit()
+
+        return job_schema.jsonify(job_query)
+
+    elif request.method == "DELETE":
+        db.session.delete(job_query)
+        db.session.commit()
+
+        return jsonify("Delete")
+
+@main.route("/supplies/<int:id>", methods=methods)
+def supplies(id):
+    # supplies_query = Supply.query.all()
+    # if request.method == "GET":
+    #     supplies = supplies_schema.dump(supplies_query)
+    #     return jsonify(supplies)
+    supply_query = Supply.query.filter_by(id=id).first()
+    if request.method == "PUT":
+        request_data = request.get_json()
+        print(request_data)
+        supply_query.price = request_data["price"]
+        supply_query.qty = request_data["qty"]
+        supply_query.total = request_data["total"]
+        db.session.commit()
+        job_value = util.updateJobValue(supply_query.job_id)
+        job_query = Job.query.filter_by(id = supply_query.job_id).first()
+        job_query.value = job_value
+        db.session.commit()
+
+        return jsonify(job_schema.dump(job_query))
+
+    elif request.method == "DELETE":
+        db.session.delete(supply_query)
+        db.session.commit()
+        job_value = util.updateJobValue(supply_query.job_id)
+        job_query = Job.query.filter_by(id = supply_query.job_id).first()
+        job_query.value = job_value
+        
+        db.session.commit()
+        return jsonify({"msg":"Delete", "value":job_value})
+        
 
 @main.route('/get_variables')
 def get_variables():
     data = util.get_data()
     return jsonify(data)
 
+@main.route('/get_counties')
+def get_counties():
+    data = util.get_county()
+    return jsonify(data)
 
+@main.route('/generate_docs/<int:id>')
+def generateDocs(id):
+    job_query = Job.query.filter_by(id=id).first()
+    # job = job_schema.dump(job_query)
+    # print(job)
+    # supply_query = Supply.query.filter_by(job_id=id).all()
+    # supply = supplies_schema.dump(supply_query)
+    # print(supply)
+     #Querying for the Supply and Product
+    def priceQuery(id):
+        price = Price.query.filter_by(id=id).first()
+        return price.price
+
+    ps_query = db.session.query(Product, Supply).join(Supply).filter(Supply.job_id == id)
+    remove_list = ['description', 'weight', 'id', 'size', 'category', 'product_id', 'job_id']
+    supplies = []
+    #Merging the Supplies & Products
+    for p, s in ps_query.all():
+        dic = product_schema.dump(p) | supply_schema.dump(s) | {"minBuying":priceQuery(s.minBuying), "maxBuying":priceQuery(s.maxBuying),  "total_buying": s.qty * priceQuery(s.minBuying)}
+        supplies.append({key: dic[key] for key in dic if key not in remove_list})
+
+    column_heads = supplies[0].keys()
+
+    #Creating the csv using pandas from a dict
+    df = pd.DataFrame(supplies)
+    # df[["name", "brand", "qty", "minBuying", "maxBuying","price","total_buying","total"]].to_csv("trial1.csv", index=False)
+   
+    #Creating the csv with csv writer -- With this naming convetion it overwrites file with similar name
+    # with open('dict.csv', "w", newline="") as csvfile:
+    #     writer = csv.DictWriter(csvfile, fieldnames=column_heads)
+    #     writer.writeheader()
+    #     writer.writerows(supplies)
+
+    # #Creating the csv while iterating the dictionary
+    with open('dict.csv', "w", newline="") as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(column_heads) 
+        # writer.writerow(['brand', 'name', 'qty', 'price', 'maxBuying', 'total', 'minBuying', 'total_buying']) #To get proper placement we can feed a list of headers manually
+        total_buying = 0
+        total_selling = 0
+        for s in supplies:
+            writer.writerow(s.values())
+            # writer.writerow([s['brand'], s['name'], s['qty'], s['price'] ...etc] )
+            total_buying += (s["minBuying"]* s["qty"])
+            total_selling += s["total"]
+        writer.writerow(["","", "", "Grand Total", total_selling, "","", total_buying, "Difference",(total_selling-total_buying)])
+   
+   #Creating with query -- not working(for future reference)   
+    # print(job_query[0].keys())
+    # fh = open('data.csv', 'wb')
+    # outcsv = csv.writer(fh)
+    # # outcsv.writerow(job_query[0].keys())
+    # outcsv.writerow(job_query)
+    # fh.close()
+    
+
+    # return jsonify('Hello')
+    return send_file('../dict.csv',
+                    mimetype='text/csv',
+                    download_name='Analysis.csv',
+                    as_attachment=True
+    )
 
