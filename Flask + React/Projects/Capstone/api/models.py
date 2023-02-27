@@ -220,3 +220,6 @@ class Note(db.Model):
 class NoteSchema(ma.Schema):
   class Meta: 
     fields = ("id", "deliveryNo", "invoiceNo", "receiptNo", "job_id" )
+
+note_schema = NoteSchema()
+notes_schema = NoteSchema(many=True)

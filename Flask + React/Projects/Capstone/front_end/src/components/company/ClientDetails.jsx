@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import Intro from "./Intro"
+import JobsTable from "./JobsTable"
+
 
 const ClientDetails = () =>{
     const {id} = useParams()
@@ -18,7 +20,7 @@ const ClientDetails = () =>{
                 const res_data = await res.json()
                 
                 if(res.status === 200 && Object.keys(res_data).length !== 0){
-                    setClient(res_data)
+                    setClient(res_data.client)
                 }else{
                     navigate('/clients')
                 }
@@ -39,6 +41,7 @@ const ClientDetails = () =>{
                 <Intro mode="Client" details={client} />
             } */}
             <Intro mode="Client" details={client} />
+            <JobsTable/>
         </div>
     )
 }

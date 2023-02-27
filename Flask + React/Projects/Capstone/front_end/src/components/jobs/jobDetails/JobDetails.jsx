@@ -266,22 +266,30 @@ const JobDetails =()=>{
         return false;
     }
 
-    const generateDocs = async()=>{
-        const res = await fetch(`/generate_docs/${jobId}`)
+    const generateDocs = async(type)=>{
+        if(type === "di"){
+            setJob(prev=>{return{...prev, status:"Supplied"}})
+            setCurrentStatus("Supplied")
+        }
+        const res = await fetch(`/generate_docs/${jobId}/${type}`)
         const res_data = await res.blob()
-        // console.log(res_data)
-        const outputFilename = `${job.code}-${Date.now()}.csv`
+        // console.log(res)
+        const filename = res.headers.get("content-disposition").split('=')[1];
         const link = document.createElement('a')
         const url = URL.createObjectURL(res_data)
-        // link.download = true
         link.href = url
-        link.setAttribute('download', outputFilename);
+        // link.download
+        link.setAttribute('download', filename);
         document.body.appendChild(link)
-        console.log(link)
         link.click()
         document.body.removeChild(link)
         URL.revokeObjectURL(url);
+    }
 
+    const sendMail = async(type)=>{
+        const res = await fetch(`/generate_docs/${jobId}/${type}`)
+        const res_data = await res.json()
+        alert(res_data)
     }
 
     //Bootstrap class name for the buttons to convert them to links
@@ -335,12 +343,12 @@ const JobDetails =()=>{
                     </div>
 
                     <div className="d-flex flex-column col-md">
-                        <button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>generateDocs()}>Check Analysis(CSV)</button>
-                        <button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}}>Check Analysis(Excel)</button>
-                        {job.status === "RFQ" && (<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}}>Invoice Request</button>)}
-                        {job.status === "RFQ" &&(<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}}>Print RFQ(pdf)</button>)}
-                        {job.status === "LPO" || job.status === "Supplied" &&(<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}}>Print Delivery & Invoice</button>)}
-                        {job.status === "Paid" &&(<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}}>Print Receipt</button>)}
+                        <button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>generateDocs("csv")}>Check Analysis(CSV)</button>
+                        <button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>generateDocs("xlsx")}>Check Analysis(Excel)</button>
+                        {job.status === "RFQ" && (<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>sendMail("mail")}>Invoice Request</button>)}
+                        {currentStatus === "RFQ" &&(<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>generateDocs("rfq")}>Print RFQ(pdf) </button>)}
+                        {(currentStatus === "LPO" || currentStatus === "Supplied") && (<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>generateDocs("di")}>Print Delivery & Invoice</button>)}
+                        {currentStatus === "Paid" &&(<button type="button" className={buttonLinkClass} style={{padding: "0px 10px"}} onClick={()=>generateDocs("receipt")}>Print Receipt</button>)}
                     </div>
                 </div>
             </div>

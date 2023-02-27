@@ -1,4 +1,4 @@
-brand,name,qty,total,maxBuying,price,minBuying,total_buying
-HP,Laptop,1,158220,125000,158220,98000,98000
-Sony,Camera,1,56915,45000,56915,45000,45000
+name,brand,qty,price,minBuying,maxBuying,total,total_buying
+Laptop,HP,1,158220,98000,125000,158220,98000
+Camera,Sony,1,56915,45000,45000,56915,45000
 ,,,Grand Total,215135,,,143000,Difference,72135

@@ -7,6 +7,7 @@ from flask_login import LoginManager
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from sqlalchemy import MetaData
+from flask_mail import Mail
 
 # Setting up custom meta data and naming convenction for the database
 convention = {
@@ -35,6 +36,9 @@ login_manager = LoginManager()
 #Setting up JWT Manager
 jwt_manager = JWTManager()
 
+#Setting up Mail
+mail = Mail()
+
 
 
 
@@ -54,8 +58,28 @@ def create_app():
     app.config['SECRET_KEY'] = SECRET_KEY
 
     # To change exp time of the tokens
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5)
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=10)
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=86400)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+
+
+    #Confirg setting for the mail 587
+    app.config['MAIL_SERVER']='smtp.gmail.com'
+    app.config['MAIL_PORT'] = 465
+    # app.config['MAIL_SERVER']='localhost'
+    # app.config['MAIL_PORT'] = 1025
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
+    # app.config['MAIL_DEBUG'] = True
+    app.config['MAIL_USERNAME'] = 'myMail@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'appPassword'
+
+    app.config['MAIL_DEFAULT_SENDER'] = 'myMail@gmail.com'
+    app.config['MAIL_MAX_EMAILS'] = None
+    # app.config['MAIL_SUPPRESS_SEND'] = False
+    app.config['MAIL_ASCII_ATTACHMENTS'] = False
+    
+    #Initialiaze Mail
+    mail.init_app(app)
 
     #Initialiaze a database + Marshmellow 
     db.init_app(app)

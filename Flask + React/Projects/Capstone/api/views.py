@@ -1,12 +1,13 @@
 from flask import Blueprint, render_template,  jsonify, request, json, make_response, send_file, current_app as app
-from . import db, decrypt, util
+from . import db, decrypt, util, mail
 from .models import *
 from flask_login import login_user, current_user, logout_user, login_required
-from functools import wraps 
-import jwt, csv, datetime
-# import datetime
+from functools import wraps
+import jwt, csv, datetime, io, pdfkit
+from openpyxl import Workbook
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required #use of flask-jwt-extended
 import pandas as pd
+from flask_mail import Message
 
 
 #For print functions
@@ -25,7 +26,7 @@ methods=["POST", "GET", "PUT", "DELETE"]
 # decorators
 def token_required(f):
     @wraps(f)
-    def decorator(*args, **kwargs):  
+    def decorator(*args, **kwargs):
         token = None
         # if 'x-access-tokens' in request.headers:
         #     token = request.headers['x-access-tokens']
@@ -38,10 +39,10 @@ def token_required(f):
             current_user = User.query.filter_by(id=data['id']).first()
         except:
             return jsonify({'message': 'token is invalid'})
-            
+
         return f(*args, **kwargs)
     return decorator
-   
+
 def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -73,7 +74,7 @@ def add_movie():
     db.session.add(new_movie)
     db.session.commit()
     print(new_movie)
-    
+
     #return 'Done', 201
     return movie_schema.jsonify(new_movie)
 
@@ -99,7 +100,7 @@ def register_user():
         #return jsonify("Username Already Exists")
     elif check_email:
         return make_response(jsonify({"msg": "Email Already Exists"}), 409)
-    
+
     #To hash the pass
     hashed_pwd = decrypt.generate_password_hash(user_data["pwd"]).decode('utf-8')
     user = User(user = username, email=email, pwd=hashed_pwd)
@@ -125,10 +126,10 @@ def login():
         #Creating a token with PyJWT --- Can create both access token and refresh token
         token = jwt.encode(
             {
-                "id" : check_username.id, 
+                "id" : check_username.id,
                 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=45)
             },
-            "SECRET_KEY", 
+            "SECRET_KEY",
             algorithm='HS256'
         )
         #Creating an access token with JWT-extended - default expire time == 15min
@@ -144,9 +145,9 @@ def login():
             "access_token":access_token,
             "refresh_token": refresh_token
         }
-        return make_response(jsonify(res_data), 201) 
+        return make_response(jsonify(res_data), 201)
     else:
-       return make_response(jsonify({'msg': "Invalid Username or Password"}), 409) 
+       return make_response(jsonify({'msg': "Invalid Username or Password"}), 409)
 
 
 @main.route("/logout")
@@ -164,14 +165,14 @@ def logout():
 def get_users():
     users_list = User.query.all()
     users = users_schema.dump(users_list)
-    
+
     return jsonify(users)
 
 @main.route("/refresh")
 @jwt_required(refresh=True)
 def refresh():
     username = get_jwt_identity()
-    access_token = create_access_token(identity=username)  
+    access_token = create_access_token(identity=username)
 
     return jsonify({"token":access_token})
 
@@ -195,7 +196,7 @@ def suppliers():
     if request.method == "GET":
         query_data = Supplier.query.all()
         suppliers = suppliers_schema.dump(query_data)
-        
+
         return jsonify(suppliers)
     else:
         supplier_data = request.get_json()
@@ -209,10 +210,10 @@ def suppliers():
 
 @main.route('/suppliers/<int:id>', methods=["GET", "POST", "PUT", "DELETE"])
 def supplierDetail(id):
-    supplier = Supplier.query.filter_by(id=id).first() 
+    supplier = Supplier.query.filter_by(id=id).first()
     if request.method == "GET":
         return jsonify(supplier_schema.dump(supplier))
-        
+
     elif request.method == "PUT":
         supplier_data = request.get_json()
         for key, value in supplier_data.items():
@@ -242,9 +243,12 @@ def clients():
 
 @main.route('/clients/<int:id>', methods=methods)
 def clientDetail(id):
-    client = Client.query.filter_by(id=id).first()
+    client_query = Client.query.filter_by(id=id).first()
     if request.method == "GET":
-        return client_schema.jsonify(client)
+        client = client_schema.dump(client_query)
+        jobs_query = Job.query.filter_by(client_id=id).all()
+        jobs = jobs_schema.dump(jobs_query)
+        return jsonify({"client":client, "jobs":jobs})
 
     elif request.method == "PUT":
         client_data = request.get_json()
@@ -252,7 +256,7 @@ def clientDetail(id):
             setattr(client, key, value)
         db.session.commit()
         return jsonify({'msg': "Client Details Updated"})
-        
+
     elif request.method == "DELETE":
         db.session.delete(client)
         db.session.commit()
@@ -282,7 +286,7 @@ def personnel(id):
     elif request.method == "PUT":
         person_data = request.get_json()
         p_id = person_data["id"]
-        person = persons_query.filter_by(id=p_id).first() 
+        person = persons_query.filter_by(id=p_id).first()
 
         for key, value in person_data.items():
             setattr(person, key, value)
@@ -362,7 +366,7 @@ def prices(id):
     #The below code will give the results in form of a two query objects inside a tuple
     result1 = db.session.query(Product, Price).join(Price).filter(Price.supplier_id == id)
     #The below code will give the results in form of a two query objects inside a tuple
-    result2 = db.session.query(Product, Price).outerjoin(Price, Product.id == Price.product_id).filter(Price.supplier_id == id).all()  
+    result2 = db.session.query(Product, Price).outerjoin(Price, Product.id == Price.product_id).filter(Price.supplier_id == id).all()
 
     #creating empty product list
     products = []
@@ -372,7 +376,7 @@ def prices(id):
         #     pd = product_schema.dump(p) | price_schema.dump(p.prices[0])
         #     products.append(pd)
         # print(products)
-        
+
     # Converting result 2 to dictionary
     for p, pr in result1.all():
         dic = product_schema.dump(p) | price_schema.dump(pr)
@@ -417,9 +421,9 @@ def prices(id):
             db.session.delete(price)
             db.session.commit()
             return jsonify("Delete")
-        else: 
+        else:
             return jsonify("Retain")
-    
+
 @main.route('/jobs', methods=methods)
 def jobs():
     if request.method == "GET":
@@ -443,7 +447,7 @@ def jobs():
 @main.route('/jobs/<int:id>', methods=methods)
 def jobDedatils(id):
     job_query = Job.query.filter_by(id=id).first()
-    # supplies_query = job_query.supplies
+    util.createNotes(job_query)
 
     #Querying for the Supply and Product
     ps_query = db.session.query(Product, Supply).join(Supply).filter(Supply.job_id == id)
@@ -475,7 +479,7 @@ def jobDedatils(id):
             product_id = request_data["product_id"],
             job_id = id,
         )
-        
+
         db.session.add(supply)
         db.session.commit()
         job_value = util.updateJobValue(id)
@@ -531,10 +535,10 @@ def supplies(id):
         job_value = util.updateJobValue(supply_query.job_id)
         job_query = Job.query.filter_by(id = supply_query.job_id).first()
         job_query.value = job_value
-        
+
         db.session.commit()
         return jsonify({"msg":"Delete", "value":job_value})
-        
+
 
 @main.route('/get_variables')
 def get_variables():
@@ -546,66 +550,230 @@ def get_counties():
     data = util.get_county()
     return jsonify(data)
 
-@main.route('/generate_docs/<int:id>')
-def generateDocs(id):
+@main.route('/generate_docs/<int:id>/<string:slug>')
+def generateDocs(id, slug):
+    print(slug)
     job_query = Job.query.filter_by(id=id).first()
-    # job = job_schema.dump(job_query)
-    # print(job)
-    # supply_query = Supply.query.filter_by(job_id=id).all()
-    # supply = supplies_schema.dump(supply_query)
-    # print(supply)
+    notes_query = Note.query.filter_by(job_id=id).first()
+    notes = {} if not notes_query else note_schema.dump(notes_query)
+
+    client_query = Client.query.filter_by(id = job_query.client_id).first()
+    job = job_schema.dump(job_query) | client_schema.dump(client_query)
+
      #Querying for the Supply and Product
     def priceQuery(id):
         price = Price.query.filter_by(id=id).first()
         return price.price
 
+    product_list = []
     ps_query = db.session.query(Product, Supply).join(Supply).filter(Supply.job_id == id)
     remove_list = ['description', 'weight', 'id', 'size', 'category', 'product_id', 'job_id']
+    supplies_full = []
     supplies = []
     #Merging the Supplies & Products
     for p, s in ps_query.all():
         dic = product_schema.dump(p) | supply_schema.dump(s) | {"minBuying":priceQuery(s.minBuying), "maxBuying":priceQuery(s.maxBuying),  "total_buying": s.qty * priceQuery(s.minBuying)}
         supplies.append({key: dic[key] for key in dic if key not in remove_list})
+        product_list.append(p.id)
+        supplies_full.append(dic)
 
-    column_heads = supplies[0].keys()
+    column_heads = list(supplies[0].keys())
+    # Setting up a context libraries that contains our data
+    context = {
+        "job": job,
+        "supplies":supplies,
+        "notes": notes
+    }
+
+    #Getting the current time
+    now = datetime.datetime.now()
+    # format the current time as a string in the format dd/mm/yyyy
+    formatted_time = now.strftime('%d/%m/%Y')
+    #Generating the file name
+    filename = f"{job_query.code}-{formatted_time}"
+
+    # Generating a csv file
+    if slug == "csv":
+        # Creating the csv while iterating the dictionary
+        with open('dict.csv', "w", newline="") as csvfile:
+            writer = csv.writer(csvfile, delimiter=',')
+            writer.writerow(column_heads)
+            # writer.writerow(['brand', 'name', 'qty', 'price', 'maxBuying', 'total', 'minBuying', 'total_buying']) #To get proper placement we can feed a list of headers manually
+            total_buying = 0
+            total_selling = 0
+            for s in supplies:
+                writer.writerow(list(s.values()))
+                # writer.writerow([s['brand'], s['name'], s['qty'], s['price'] ...etc] )
+                total_buying += (s["minBuying"]* s["qty"])
+                total_selling += s["total"]
+            writer.writerow(["","", "", "Grand Total", total_selling, "","", total_buying, "Difference",(total_selling-total_buying)])
+
+        return send_file('../dict.csv',
+                    mimetype='text/csv',
+                    download_name=f"{filename}.{slug}",
+                    as_attachment=True
+                )
 
     #Creating the csv using pandas from a dict
-    df = pd.DataFrame(supplies)
-    # df[["name", "brand", "qty", "minBuying", "maxBuying","price","total_buying","total"]].to_csv("trial1.csv", index=False)
-   
-    #Creating the csv with csv writer -- With this naming convetion it overwrites file with similar name
-    # with open('dict.csv', "w", newline="") as csvfile:
-    #     writer = csv.DictWriter(csvfile, fieldnames=column_heads)
-    #     writer.writeheader()
-    #     writer.writerows(supplies)
+    # df = pd.DataFrame(supplies)
+        # df[["name", "brand", "qty", "minBuying", "maxBuying","price","total_buying","total"]].to_csv("trial1.csv", index=False)
 
-    # #Creating the csv while iterating the dictionary
-    with open('dict.csv', "w", newline="") as csvfile:
-        writer = csv.writer(csvfile, delimiter=',')
-        writer.writerow(column_heads) 
-        # writer.writerow(['brand', 'name', 'qty', 'price', 'maxBuying', 'total', 'minBuying', 'total_buying']) #To get proper placement we can feed a list of headers manually
+        #Creating the csv with csv writer -- With this naming convetion it overwrites file with similar name
+        # with open('dict.csv', "w", newline="") as csvfile:
+        #     writer = csv.DictWriter(csvfile, fieldnames=column_heads)
+        #     writer.writeheader()
+        #     writer.writerows(supplies)
+        
+    #Creating with query -- not working(for future reference)
+        # print(job_query[0].keys())
+        # fh = open('data.csv', 'wb')
+        # outcsv = csv.writer(fh)
+        # # outcsv.writerow(job_query[0].keys())
+        # outcsv.writerow(job_query)
+        # fh.close()
+
+
+        # return .....
+    
+    elif slug == "xlsx":
+        #Creating an Excel Workbook
+        wb = Workbook()
+        ws = wb.active
+
+        #Adding Column headers
+        ws.append(['brand', 'name', 'qty', 'price', 'total', 'maxBuying', 'minBuying', 'total_buying'])
+
+        #Adding Data
         total_buying = 0
         total_selling = 0
         for s in supplies:
-            writer.writerow(s.values())
-            # writer.writerow([s['brand'], s['name'], s['qty'], s['price'] ...etc] )
+            data = [s['brand'], s['name'], s['qty'], s['price'], s['total'], s['maxBuying'], s['minBuying'], s['total_buying']]
+            # data = list(s.values())
+            ws.append(data)
             total_buying += (s["minBuying"]* s["qty"])
             total_selling += s["total"]
-        writer.writerow(["","", "", "Grand Total", total_selling, "","", total_buying, "Difference",(total_selling-total_buying)])
-   
-   #Creating with query -- not working(for future reference)   
-    # print(job_query[0].keys())
-    # fh = open('data.csv', 'wb')
-    # outcsv = csv.writer(fh)
-    # # outcsv.writerow(job_query[0].keys())
-    # outcsv.writerow(job_query)
-    # fh.close()
-    
+        # Add summary
+        summary = ["", "", "", "Grand Total", total_selling, "", "", total_buying, "Difference", (total_selling-total_buying)]
+        ws.append(summary)
 
-    # return jsonify('Hello')
-    return send_file('../dict.csv',
-                    mimetype='text/csv',
-                    download_name='Analysis.csv',
-                    as_attachment=True
-    )
+        # Set response headers --- In this case we do not use the buffer 
+        # response = make_response(wb.save_as_stream())
+        # response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        # response.headers['Content-Disposition'] = 'attachment; filename=filename'
+
+        # return response
+
+
+        # Saving the workbook to a buffer 
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        # Create a response and send the buffer as a file download
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"{filename}.{slug}",
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    elif slug == 'email':
+        #Creating an empty dictionary, where the key will be the supplier and the products the value
+        result = {} 
+        for id in product_list:
+            prices = Price.query.filter_by(product_id=id)
+            for price in prices:
+                #looping through the prices to get the supplier id
+                supplier_id = price.supplier_id
+                if supplier_id not in result:
+                    #For each supplier check if a corresponding key exist in result, 
+                    # if not creat a key with an empty list value
+                    result[supplier_id] = []
+                #Next append the product id to the created list 
+                result[supplier_id].append(id)
+
+        # Convert the dictionary to a list of dictionaries
+        output = [{"supplier": k, "products": v} for k, v in result.items()]
+
+        for k, v in result.items():
+            supplier = Supplier.query.filter_by(id=k).first()
+            supplys = [
+                dic for dic in supplies_full if dic['product_id'] in v
+            ]
+
+            # Creating an Excel Workbook
+            wb = Workbook()
+            ws = wb.active
+            column_names = [ 'name', 'brand', 'qty', 'price', 'total']
+            # Writing the heading
+            ws.append(column_names)
+            # Adding the rows
+            for s in supplys:
+                ws.append([s['name'], s['brand'], s['qty']])
+            # Saving the workbook to a buffer 
+            buffer = io.BytesIO()
+            wb.save(buffer)
+            buffer.seek(0)
+
+            msg = Message('Bulk!', recipients=['kevin.mutinda.ck@gmail.com'])
+            msg.body = 'Hello From Flask'
+            msg.attach(
+                    filename='invoice.xlsx',
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    data=buffer.getvalue()
+                )
+            mail.send(msg)
+
+        return jsonify("Email Sent")
+        
+
+    elif slug == 'pdf':
+        context = {"msg":"Hello 23"}
+        response = util.printPdf(context)
+
+        return response
+
+    elif slug == 'rfq':
+        # context = {"msg":"Hello 23", "type":slug}
+        a = [{"title":"RFQ", "body":"Quotation for RFQ"}]
+        response = util.printPdf(context, a)
+
+        return response
+    elif slug == "di":
+        job_query.status = "Supplied"
+        db.session.commit()
+        a = [{"title":"Invoice", "body":"Invoice"}, {"title":"Delivery", "body":"Delivery Note"}]
+        response = util.printPdf(context)
+
+        return response
+
+    elif slug == "receipt":
+        a = [{"title":"Receipt", "body":"Receipt"}]
+        response = util.printPdf(context, a)
+
+        return response
+
+    
+        
+@main.route('/mail')
+def send_mail():
+    # msg = Message('Hey There 2', recipients=['cayapo5476@wireps.com'])
+    # msg.body = "Hey How are you?"
+    # mail.send(msg)
+    mails = ['cayapo5476@wireps.com', 'pucyxy@teleg.eu']
+    with mail.connect() as conn:
+        for email in mails:
+            # print(email)
+            msg = Message('Bulk!', recipients=[email])
+            msg.body = 'Hello From Flask'
+            conn.send(msg)
+
+    return 'Message sent'
+
+
+        
+
+
+
+
+
 
