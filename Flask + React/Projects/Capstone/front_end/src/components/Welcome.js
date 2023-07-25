@@ -20,7 +20,7 @@ const Welcome = () => {
                 </p>
                 <h2 className="text-center">The RFQ process involves</h2>
                 <div className="d-flex justify-content-center " >
-                    <ul> 
+                    <ul style={{listStyleType: "none"}}> 
                     <li>Awarding of the RFQ</li>
                     <li>Filling of the RFQ</li>
                     <li>Submitting of the RFQ</li>

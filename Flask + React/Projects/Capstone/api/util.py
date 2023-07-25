@@ -176,6 +176,7 @@ def printPdf(context, a):
         'user-style-sheet': 'api/static/stylesWebkit.css'
     }
 
+    #Note we provide the config when wkhtmltopdf is not in your system path, 
     config = pdfkit.configuration(wkhtmltopdf="C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
     
     for item in a:
