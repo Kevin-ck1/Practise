@@ -1,9 +1,13 @@
 //Importing express and env
 
 const express = require('express')
+const colors = require('colors')
 const dotenv = require('dotenv').config()
 const {errorHandler} = require('./middleware/errorMiddleware')
+const connectDB = require('./config/db')
 const port = process.env.PORT || 5000
+
+connectDB()
 
 const app = express()
 
@@ -33,7 +37,9 @@ app.use(express.urlencoded({extended: false}))
 
 //Incorporating the goalRoutes.js
 app.use('/api/goals', require('./routes/goalRoutes'))
-//TO override the default express error handler
+app.use('/api/users', require('./routes/userRoutes'))
+
+//To override the default express error handler
 app.use(errorHandler)
 
 app.listen(port, ()=>{

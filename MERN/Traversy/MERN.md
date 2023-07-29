@@ -12,10 +12,10 @@ We will then setup **node**, in the root directory
 npm init -y
 ```
 
-Setting up the express, env, mongoose, color
+Setting up the express, env, mongoose, colors
 
 ```shell
-npm i express dotenv mongoose color
+npm i express dotenv mongoose colors
 ```
 
 To run the server in developer mode we will have to install **nodemon**
@@ -209,5 +209,110 @@ const {errorHandler} = require('./middleware/errorMiddleware')
 .
 .
 app.use(errorHandler)
+```
+
+
+
+### Async Handler
+
+Since calls to the Mongo db will be async, we will use the express async handler.
+
+To install it `npm i express-async-handler `
+
+We will then import it to goalController and incorporate it to our functions
+
+```js
+const aysncHandler = require('express-async-handler')
+
+const getGoals = aysncHandler(async (req, res) =>{
+    res.status(200).json({text : "Get Goals"})
+})
+```
+
+Note that below are some of the ways to deal with  asynchronous calls
+
+* fetch => .then . chatch
+
+* asyc await => try catch
+
+In this case since we are using **asyc**, we use the express async handler, so that we can use the express error handler.
+
+
+
+## Mongo DB
+
+Setup an account and create a cluster
+
+To connect to the the db to the application, we will setup the **db.js** file with the below code
+
+```js
+const { Console } = require('console')
+const mongoose = require('mongoose')
+
+const connectDB = async () =>{
+    try{
+        const conn = await mongoose.connect(process.env.MONGO_URI)
+
+        console.log(`MongoDB Connected: ${conn.connection.host}`.cyan.underline)
+    } catch(error) {
+        console.log(error)
+        process.exit(1)
+    }
+}
+
+module.exports = connectDB
+```
+
+* Note that `.cyan.underline`, uses the `colors` library to change the color and decorate the console log output.
+
+Then to link the `db.js` to the rest of the application, in the **server.js** file
+
+```js
+const connectDB = require('./config/db')
+...
+connectDB()
+```
+
+
+
+
+
+### Models - Goal
+
+For the models, we first start by creating a **model** folder, then a **goalModel.js** file and inside,
+
+```js
+//requirements
+const mongoose = require('mongoose')
+
+//creating the schema
+const goalSchema = mongoose.Schema({
+    text : {
+        type: String,
+        required: [true, 'Please add a text value']
+    }
+},{
+    timestamps: true,
+})
+
+module.exports = mongoose.model('Goal', goalSchema)
+```
+
+
+
+To bring in the model into the controller
+
+```js
+const Goal = require('../models/goalModel')
+```
+
+This will enable us to manipulate the Goal as an object with several functions attached to it e.g `.find, .create`
+
+```js
+const goals = await Goal.find()
+
+const goal = await Goal.create({text: req.body.text})
+
+const updatedGoal = await Goal.findByIdAndUpdate(...)
 ```
 
