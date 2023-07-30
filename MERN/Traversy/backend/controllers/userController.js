@@ -99,7 +99,11 @@ Route - POST /api/users/me
 Access - Private
 */
 const getMe = asyncHandler(async(req, res)=>{
-    res.status(200).json('Hello')
+    //Since from the auth middleware we have attached the user to the req
+    //To obtain the user
+    console.log(req.user)
+    res.status(200).json(req.user)
+    
 })
 
 //Generate JWT
@@ -112,5 +116,5 @@ const generateToken = (id)=>{
 module.exports = {
     registerUser,
     loginUser,
-
+    getMe
 }

@@ -7,8 +7,9 @@ Route - GET /api/goals
 Access - Private
 */
 const getGoals = aysncHandler(async (req, res) =>{
-    //bring in the goals
-    const goals = await Goal.find()
+    //bring in the goals for a specific user
+    const user = req.user.id // obtaining user id from the req object
+    const goals = await Goal.find({user})
 
     res.status(200).json(goals)
 })
@@ -26,7 +27,8 @@ const setGoal =aysncHandler(async  (req, res)=>{
     }
 
     const goal = await Goal.create({
-        text: req.body.text
+        text: req.body.text,
+        user: req.user.id 
     })
     
     res.status(200).json(goal)
@@ -44,6 +46,19 @@ const updateGoal =aysncHandler(async (req, res)=>{
     if(!goal){
         res.status(400)
         throw new Error('Goal not found')
+    }
+
+
+    //Check for user
+    if(!req.user){
+        res.status(401)
+        throw new Error('User not found')
+    }
+
+    //Comparing the goal uuser and the goal user
+    if(goal.user.toString() !== req.user.id){
+        res.status(401)
+        throw new Error('User not Authorized')
     }
 
     const updatedGoal = await Goal.findByIdAndUpdate(req.params.id, req.body,{
@@ -66,6 +81,18 @@ const deleteGoal =aysncHandler(async (req, res)=>{
     }
 
     console.log(goal)
+
+    //Check for user
+    if(!req.user){
+        res.status(401)
+        throw new Error('User not found')
+    }
+
+    //Comparing the goal uuser and the goal user
+    if(goal.user.toString() !== req.user.id){
+        res.status(401)
+        throw new Error('User not Authorized')
+    }
 
     await goal.deleteOne();
 
