@@ -118,3 +118,8 @@ app.use((req, res, next)=>{
 
 Note that in the above, the middleware accepts **request, res, next**. the **next** function enables us to continue to the rest of the code.
 
+
+
+### Routes
+
+To handle routes we 
