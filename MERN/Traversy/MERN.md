@@ -316,3 +316,150 @@ const goal = await Goal.create({text: req.body.text})
 const updatedGoal = await Goal.findByIdAndUpdate(...)
 ```
 
+
+
+### Hashing password
+
+We will the bcrypt algorithm to encrypt our password. To install
+
+```shell
+npm i bcryptjs
+```
+
+In the **userController.js**, we can hash the password while registering a new user.
+
+Note hashing is time sensitive computation, hence the functions relating to it are asynchronous. Hence the use of await, and the functions should be housed under an `async` function.
+
+```js
+//Requirement
+const bcyrpt = require('bcryptjs') //lib for hashing
+
+//Encrypt password - Not to functions are async
+const salt = await bcyrpt.genSalt(10) //generate random data value to attach to password to increase security
+const hashedPassword = await bcyrpt.hash(password, salt)
+
+```
+
+In the above `hashedPassword` is the encrypted password, that we will save into our db with the `User` model.
+
+To decrypt the password, in the login function, we compare the `hashedPassword` with the received password from the login
+
+```js
+if(user && (await bcyrpt.compare(password, user.password))){
+    res.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        token: generateToken(user.id)
+    })
+} else {
+    res.status(400)
+    throw new Error('Invalid Credentials')
+}
+```
+
+
+
+### JWT Token
+
+Library required `jsonwebtoken`, to install it `npm i jsonwebtoken`.
+
+To increase auth experience, we can use auth tokens for security.
+
+To generate a token
+
+```js
+const jwt = require('jsonwebtoken')
+
+
+//Generate JWT
+const generateToken = (id)=>{
+    return jwt.sign({id}, process.env.JWT_SECRET,{
+        expiresIn: '30d',
+    })
+}
+
+/*
+JWT_SECRET is an environment variable
+Note that the token expires after 30 days
+*/
+
+//To use the above funtion to generate a token,
+//A token is generated when we are login or registering
+generateToken(user.id)
+```
+
+
+
+Once we have generated the token we send it back to the user interface so that it is attached to the header of subsequent requests. 
+
+Note that with the token, we can routes private, in that before we access the routes, we check for the availability of the  token.
+
+We do so by creating a middleware which we place before the route function  is called.
+
+Below is an example of the middleware we can use
+
+```js
+//requirements
+const jwt = require('jsonwebtoken')
+const asyncHandler = require('express-async-handler')
+const User = require('../models/userModel')
+
+//creating the function
+const protect = asyncHandler(async(req, res, next)=>{
+    let token
+
+    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
+        try {
+            //Get token
+            token = req.headers.authorization.split(' ')[1]
+
+            //Verify the token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET)
+            console.log(decoded)
+
+            //Get user from the token, and attach it to the request object
+            console.log(req)
+            req.user = await User.findById(decoded.id).select('-password') //The select keyword will remove the password 
+
+            next() // To continue to function
+
+        } catch (error) {
+            console.log(error)
+            res.status(401)
+            throw new Error('Not Authorized')
+        }
+    }
+
+    if(!token){
+        res.status(401)
+        throw new Error('Not authorized, no token')
+    }
+})
+
+module.exports = { protect }
+```
+
+
+
+In the above middleware, we do the following things
+
+* Check if the request object has authorization header and if the authorization header starts with a *bearer* keyword.
+* From the header we get the token, with is after the bearer keyword
+* From the obtained token we decode it to get the id
+* With the id we query the database for the user attached to it and retrieve the user details excluding the id.
+* If we have no errors, we call the `next()` function
+* We also check for errors
+
+
+
+To use the created middleware, we attach it to the protected routes
+
+In our case we will import it in the **userRoutes**
+
+```js
+const {protect} = require('../middleware/authMiddleware')
+
+router.get('/me', protect, getMe) // Note that the protect function is the middleware, we call it before the controller function.
+```
+

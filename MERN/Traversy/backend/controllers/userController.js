@@ -11,6 +11,7 @@ Access - Public
 */
 const registerUser = asyncHandler(
     async (req, res) =>{
+        // console.log(req.body)
         //Retrieving request data
         const {name, email, password } = req.body
 
