@@ -20,6 +20,7 @@ Route - POST /api/goals
 Access - Private
 */
 const setGoal =aysncHandler(async  (req, res)=>{
+    console.log(!false)
     if(!req.body.text){
         //res.status(400).json({text: "Please add a text field"})
         res.status(400)
